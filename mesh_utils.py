@@ -24,7 +24,7 @@ def show_cluster(points: np.array) -> None:
 
     fig = plt.figure( figsize=(12, 12))
     ax_3d = fig.add_subplot(2, 2, 1, projection='3d')  # 3D, xy, yz, xz
-    ax_3d.title('3D Projection')
+    ax_3d.title.set_text('3D Scene')
     ax_3d.set_xlim3d(*limits['x'])
     ax_3d.set_ylim3d(*limits['y'])
     ax_3d.set_zlim3d(*limits['z'])
@@ -34,21 +34,21 @@ def show_cluster(points: np.array) -> None:
     ax_3d.scatter3D(points[:, 0], points[:, 1], points[:, 2], c = points[:, 3])
 
     ax_xy = fig.add_subplot(2, 2, 2)
-    ax_xy.title('X-Y Projection')
+    ax_xy.title.set_text('X-Y Projection')
     ax_xy.scatter(points[:, 0], points[:, 1])
     ax_xy.set_xlabel('y')
     ax_xy.set_ylabel('x')
     ax_xy.grid(True)
 
     ax_yz = fig.add_subplot(2, 2, 3)
-    ax_yz.title('Y-Z Projection')
+    ax_yz.title.set_text('Y-Z Projection')
     ax_yz.scatter(points[:, 1], points[:, 2])
     ax_yz.set_xlabel('y')
     ax_yz.set_ylabel('z')
     ax_yz.grid(True)
 
     ax_xz = fig.add_subplot(2, 2, 4)
-    ax_xz.title('X-Z Projection')
+    ax_xz.title.set_text('X-Z Projection')
     ax_xz.scatter(points[:, 0], points[:, 2])
     ax_xz.set_xlabel('x')
     ax_xz.set_ylabel('z')
