@@ -1,5 +1,8 @@
 import numpy as np
+
 from scipy.signal import find_peaks, argrelextrema
+from scipy.linalg import lstsq
+
 from sklearn.neighbors import KernelDensity
 
 import io_utils as ply
@@ -44,6 +47,16 @@ class Sign_Detector:
 
         min_idx = argrelextrema(density_arr[peaks_idx[0]: peaks_idx[-1]], np.less)[0]
         self.r_threshold = data[peaks_idx[0] + min_idx].mean()
-        print(self.pole_val, self.plane_val)
 
         return 1
+
+    def separate_by_thresh(self, data: np.array):
+        plate_idx = (data[:, -1] > self.r_threshold)
+        plate_idx = plate_idx
+
+        return data[plate_idx], data[np.bitwise_not(plate_idx)]
+
+
+class Plane:
+    def __init__(self, cluster_points):
+        self.coefs = {'A': None, 'B': None, 'C': None}

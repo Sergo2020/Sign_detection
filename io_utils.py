@@ -26,62 +26,86 @@ def read_csv(path):
     return points
 
 
-def show_cluster(points: np.array, scale: bool = False) -> None:
-    limits = {}
+class Scene_viewer:
+    def __init__(self, scene_points):
 
-    for ax_idx, ax in enumerate(['x', 'y', 'z']):
-        limits[ax] = (points[:, ax_idx].min(), points[:, ax_idx].max(), points[:, ax_idx].mean())
+        self.coord_system = ('x', 'y', 'z')
+        self.scene_center = None
+        self.scene_boundries = None
 
-    if scale:  # Scaling all the axis according to maximal diffrence
-        scale_params = np.array([(limits[k][1] - limits[k][0]) for k in limits.keys()])
+        self.scene_boundries = self._calc_limits(scene_points)
+        self._set_scene(scene_points)
+
+    def _calc_limits(self, points):
+        limits = {}
+
+        for ax_idx, ax in enumerate(self.coord_system):
+            limits[ax] = (points[:, ax_idx].min(), points[:, ax_idx].max())
+
+        return limits
+
+    def _set_scene(self, scene_points):
+
+        self.scene_center = {k: c for (k, c) in zip(self.coord_system, scene_points[:, :-1].mean(0))}
+        self.scene_boundries = self._calc_limits(scene_points)
+
+        scale_params = np.array([(self.scene_boundries[k][1] - self.scene_boundries[k][0]) for k in self.coord_system])
         max_diff = scale_params.max() / 2
-        for ax in limits.keys():
-            limits[ax] = (limits[ax][-1] - max_diff, limits[ax][-1] + max_diff)
+        for ax in self.coord_system:
+            self.scene_boundries[ax] = (self.scene_center[ax] - max_diff,
+                                        self.scene_center[ax] + max_diff)
 
-    fig = plt.figure(figsize=(4 * plot_size, 4 * plot_size))
-    ax_3d = fig.add_subplot(2, 2, 1, projection='3d')  # 3D, xy, yz, xz
-    ax_3d.title.set_text('3D Scene')
-    ax_3d.set_xlim3d(*limits['x'])
-    ax_3d.set_ylim3d(*limits['y'])
-    ax_3d.set_zlim3d(*limits['z'])
-    ax_3d.set_xlabel('x')
-    ax_3d.set_ylabel('y')
-    ax_3d.set_zlabel('z')
-    ax_3d.scatter3D(points[:, 0], points[:, 1], points[:, 2], c=points[:, 3])
+    def show_cluster(self, points: np.array, scale2scene: bool = False) -> None:
 
-    ax_xy = fig.add_subplot(2, 2, 2)
-    ax_xy.title.set_text('X-Y Projection')
-    ax_xy.scatter(points[:, 0], points[:, 1], c=points[:, 3])
-    ax_xy.set_xlabel('x')
-    ax_xy.set_ylabel('y')
-    ax_xy.set_xlim(*limits['x'])
-    ax_xy.set_ylim(*limits['y'])
-    ax_xy.yaxis.set_label_position("right")
-    ax_xy.yaxis.tick_right()
-    ax_xy.grid(True)
+        if scale2scene:  # Scaling all the axis according to maximal diffrence
+            limits = self.scene_boundries
+        else:
+            limits = self._calc_limits(points)
 
-    ax_yz = fig.add_subplot(2, 2, 3)
-    ax_yz.title.set_text('Y-Z Projection')
-    ax_yz.scatter(points[:, 1], points[:, 2], c=points[:, 3])
-    ax_yz.set_xlabel('y')
-    ax_yz.set_ylabel('z')
-    ax_yz.set_xlim(*limits['y'])
-    ax_yz.set_ylim(*limits['z'])
-    ax_yz.grid(True)
+        fig = plt.figure(figsize=(4 * plot_size, 4 * plot_size))
+        ax_3d = fig.add_subplot(2, 2, 1, projection='3d')  # 3D, xy, yz, xz
+        ax_3d.title.set_text('3D Scene')
+        ax_3d.set_xlim3d(*limits['x'])
+        ax_3d.set_ylim3d(*limits['y'])
+        ax_3d.set_zlim3d(*limits['z'])
+        ax_3d.set_xlabel('x')
+        ax_3d.set_ylabel('y')
+        ax_3d.set_zlabel('z')
+        ax_3d.scatter3D(points[:, 0], points[:, 1], points[:, 2], c=points[:, 3])
 
-    ax_xz = fig.add_subplot(2, 2, 4)
-    ax_xz.title.set_text('X-Z Projection')
-    ax_xz.scatter(points[:, 0], points[:, 2], c=points[:, 3])
-    ax_xz.set_xlabel('x')
-    ax_xz.set_ylabel('z')
-    ax_xz.set_xlim(*limits['x'])
-    ax_xz.set_ylim(*limits['z'])
-    ax_xz.yaxis.tick_right()
-    ax_xz.yaxis.set_label_position("right")
-    ax_xz.grid(True)
+        ax_xy = fig.add_subplot(2, 2, 2)
+        ax_xy.title.set_text('X-Y Projection')
+        ax_xy.scatter(points[:, 0], points[:, 1], c=points[:, 3])
+        ax_xy.set_xlabel('x')
+        ax_xy.set_ylabel('y')
+        ax_xy.set_xlim(*limits['x'])
+        ax_xy.set_ylim(*limits['y'])
+        ax_xy.yaxis.set_label_position("right")
+        ax_xy.yaxis.tick_right()
+        ax_xy.grid(True)
 
-    fig.tight_layout()
-    plt.show()
+        ax_yz = fig.add_subplot(2, 2, 3)
+        ax_yz.title.set_text('Y-Z Projection')
+        ax_yz.scatter(points[:, 1], points[:, 2], c=points[:, 3])
+        ax_yz.set_xlabel('y')
+        ax_yz.set_ylabel('z')
+        ax_yz.set_xlim(*limits['y'])
+        ax_yz.set_ylim(*limits['z'])
+        ax_yz.grid(True)
+
+        ax_xz = fig.add_subplot(2, 2, 4)
+        ax_xz.title.set_text('X-Z Projection')
+        ax_xz.scatter(points[:, 0], points[:, 2], c=points[:, 3])
+        ax_xz.set_xlabel('x')
+        ax_xz.set_ylabel('z')
+        ax_xz.set_xlim(*limits['x'])
+        ax_xz.set_ylim(*limits['z'])
+        ax_xz.yaxis.tick_right()
+        ax_xz.yaxis.set_label_position("right")
+        ax_xz.grid(True)
+
+        fig.tight_layout()
+        plt.show()
 
 
 def plot_hitogram(points, n_bins):
@@ -102,11 +126,15 @@ def plot_hitogram(points, n_bins):
     plt.show()
 
 
-def plot_fun(arr_y, arr_x=None, title='Title', y_label='y', x_label='x'):
+def plot_fun(arr_y, arr_x=None, title: str = 'Title', y_label: str = 'y', x_label: str = 'x'):
     if arr_x is None:
         arr_x = range(len(arr_y))
 
     plt.figure(figsize=(plot_size * 2, plot_size * 2))
     plt.plot(arr_x, arr_y)
     plt.grid(True)
+    plt.title(title)
+    plt.ylabel(y_label)
+    plt.xlabel(x_label)
+    plt.tight_layout()
     plt.show()
