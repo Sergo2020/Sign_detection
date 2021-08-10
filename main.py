@@ -9,7 +9,7 @@ import io_utils as ply
 
 
 def detect_sign(cluster_file_path: Path):
-    points = ply.read_csv(clster_path)
+    points = ply.read_csv(cluster_path)
     sign_detector = alg.Sign_Detector()
     sign_detector.fit_kde(points[:, -1])
     dens, dens_x = sign_detector.produce_density_arr(points[:, -1], 100, show=True)
@@ -19,9 +19,12 @@ def detect_sign(cluster_file_path: Path):
         print('The cluster is not a sign.')
         os.exit()
 
-
+# TODO: Separate points by R V
+# TODO: Check that all plane points are on the same surface (find normal)
+# TODO: Check what type of plane it is
+# TODO: Fix code and check for usability
 if __name__ == '__main__':
     obj_path = Path(r"Objects\cube.ply")
-    clster_path = Path(r"Objects\cluster_2.csv")
+    cluster_path = Path(r"Objects\cluster_2.csv")
 
-    detect_sign(clster_path)
+    detect_sign(cluster_path)
