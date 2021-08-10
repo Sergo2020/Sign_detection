@@ -1,9 +1,10 @@
+import os
 from pathlib import Path
 
-import os
-
-import io_utils as ply
 import algorithms as alg
+import io_utils as ply
+
+
 # https://github.com/falcondai/py-ransac/blob/master/ransac.py
 
 
@@ -19,12 +20,8 @@ def detect_sign(cluster_file_path: Path):
         os.exit()
 
 
-
-
 if __name__ == '__main__':
     obj_path = Path(r"Objects\cube.ply")
     clster_path = Path(r"Objects\cluster_2.csv")
 
     detect_sign(clster_path)
-
-
