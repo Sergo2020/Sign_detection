@@ -1,6 +1,5 @@
 from scipy.signal import find_peaks, argrelextrema
-from scipy.spatial import ConvexHull, convex_hull_plot_2d
-
+from scipy.spatial import ConvexHull
 from sklearn.neighbors import KernelDensity
 
 import io_utils as ply
@@ -103,9 +102,8 @@ class Plane:
     def project_points(self, points):
         """
         points(x, y, z)
-
         Projects the points with coordinates x, y, z onto the plane
-        defined by a*x + b*y + c*z = 1
+        ax+by+cz+d = 0
         """
 
         if points.shape[1] > 3:
@@ -113,8 +111,7 @@ class Plane:
         else:
             coords = points
 
-        normal_en = np.dot(self.normal, self.normal)
-        unit_normal = self.normal / np.sqrt(normal_en)
+        unit_normal = self.normal / np.linalg.norm(self.normal)
         plane_point = self.inliers[0, :3].reshape(1, 3)
 
         points_from_point_in_plane = coords - plane_point
@@ -127,24 +124,52 @@ class Plane:
 
         return points
 
-    def projected_2d(self, projected_points):
+    @staticmethod
+    def projected_2d(projected_points):
         if projected_points.shape[1] > 3:
             coords3d = projected_points[:, :3]
         else:
             coords3d = projected_points
 
-        return coords3d[:,:2] /( coords3d[:,-1].reshape(-1,1) + 1e-7)
+        return coords3d[:, :2] / (coords3d[:, -1].reshape(-1, 1) + 1e-7)
 
-    def get_hull(self, points_2d):
+    @staticmethod
+    def get_hull(points_2d):
         hull = ConvexHull(points_2d)
-
-        point_simplices = np.zeros((len(points_2d), 2))
-
-        cnt = 0
-        for s in hull.simplices:
-            point_simplices[cnt] = points_2d[s[0]]
-            point_simplices[cnt + 1] = points_2d[s[1]]
-            cnt += 2
-
         verticies = points_2d[hull.vertices]
-        return hull, point_simplices, verticies
+        return hull, verticies
+
+    @staticmethod
+    def detect_shape(boundry_points, plot_fun, ang_th=90):  # points are ordered in counter-clockwise order
+
+        boundry_points = np.concatenate((boundry_points, boundry_points[0].reshape(1, 2)), axis=0)
+
+        lines = [[boundry_points[0], boundry_points[1]]]
+
+        def stable_norm(v):
+            return np.linalg.norm(v) + 1e-7
+
+        def calc_angle(line_1, line_2):
+            line_1 /= stable_norm(line_1)
+            line_2 /= stable_norm(line_2)
+            cos = np.dot(line_1, line_2)
+            return 180*np.abs(np.arccos(cos) / np.pi)
+
+        for idx in range(2, len(boundry_points)):
+
+            next_point = boundry_points[idx]
+
+            v1 = lines[-1][0] - lines[-1][1]
+            v2 = next_point - lines[-1][1]
+            ang = calc_angle(v1, v2)
+            print(ang)
+
+            if ang > ang_th:
+                lines[-1][1] = next_point
+
+            else:
+                lines.append([lines[-1][1], next_point])
+
+            plot_fun(boundry_points, np.array(lines).reshape(-1, 2))
+
+        return np.array(lines).reshape(-1, 2)
