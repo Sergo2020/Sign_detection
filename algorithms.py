@@ -162,35 +162,43 @@ class Plane:
     @staticmethod
     def detect_lines(img):
 
-        img_bw = img[:, :, 0]
+        dummy = np.zeros_like(img)
 
-        new_image = np.zeros_like(img)
+        img_points = img[:, :, 1]
 
-        lines_p = cv.HoughLinesP(img_bw, rho=1, theta=np.pi / 180, threshold=0, minLineLength=0)
-        lines = cv.HoughLines(img_bw, rho=50, theta=np.pi / 180, threshold=3)
+        rectangle_dum = np.zeros_like(img_points)
+        traingle_dum = np.zeros_like(img_points)
+        circle_dum = np.zeros_like(img_points)
 
-        for x1, y1, x2, y2 in lines_p:
-            cv.line(new_image, (x1, y1), (x2, y2), (0, 255, 0), 1)
+        idx = np.where(img[:, :, 1] > 0)
 
-        def drawhoughLinesOnImage(image, houghLines):
-            for line in houghLines:
-                for rho, theta in line:
-                    a = np.cos(theta)
-                    b = np.sin(theta)
-                    x0 = a * rho
-                    y0 = b * rho
-                    x1 = int(x0 + 1000 * (-b))
-                    y1 = int(y0 + 1000 * (a))
-                    x2 = int(x0 - 1000 * (-b))
-                    y2 = int(y0 - 1000 * (a))
+        min_y, min_x = idx[0].min(), idx[1].min()
+        max_y, max_x = idx[0].max(), idx[1].max()
 
-                    cv.line(image, (x1, y1), (x2, y2), (255, 0, 0), 1)
+        c_y, c_x = img_points.shape[0] // 2, img_points.shape[1] // 2
+        r = ((max_y - min_y) + (max_x - min_x)) // 4
 
-        drawhoughLinesOnImage(new_image, lines)
+        rectangle = [(min_x, min_y), (max_x, max_y)]
+        triangle = np.array([(min_x, min_y), (min_x, max_y), (max_x, (max_y + min_y) // 2)])
 
-        new_image[img_bw == 255] = (0, 0, 255)
+        cv.rectangle(rectangle_dum, rectangle[0], rectangle[1], 255, -1)
+        cv.drawContours(traingle_dum, [triangle], 0, 255, -1)
+        cv.circle(circle_dum, (c_x, c_y), r, 255, -1)
+        triangle_inv_dum = cv.flip(traingle_dum, 1)
 
-        return new_image
+        dummy[:, :, 0] = rectangle_dum
+        dummy[:, :, 1] = traingle_dum
+        dummy[:, :, 2] = circle_dum
+
+        dummy[idx] = 255
+
+        rect = np.bitwise_and(img_points, rectangle_dum).sum() / img[:, :, 1].sum()
+        tria = np.bitwise_and(img_points, traingle_dum).sum() / img[:, :, 1].sum()
+        inv_tria = np.bitwise_and(img_points, triangle_inv_dum).sum() / img[:, :, 1].sum()
+        circ = np.bitwise_and(img_points, circle_dum).sum() / img[:, :, 1].sum()
+
+        print(f'Point ratio captured by shape:\n Rectangle {rect:.2f} | Triangle {tria:.2f} | Inverted Triangle {inv_tria:.2f} | Circle {circ:.2f}')
+        return dummy
 
     @staticmethod
     def get_hull(points_2d):
