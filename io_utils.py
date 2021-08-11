@@ -151,3 +151,15 @@ def scatter_2d(arr_2d: np.array, hull: np.array,
     plt.xlabel(x_label)
     plt.tight_layout()
     plt.show()
+
+def show_image(img_np: np.array,
+               title: str = 'Image', y_label: str = 'y', x_label: str = 'x' ):
+
+    plt.figure(figsize=(plot_size * 2, plot_size * 2))
+    plt.imshow(img_np)
+    plt.title(title)
+    plt.ylabel(y_label)
+    plt.xlabel(x_label)
+    plt.axis(False)
+    plt.tight_layout()
+    plt.show()

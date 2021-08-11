@@ -1,6 +1,7 @@
 from scipy.signal import find_peaks, argrelextrema
 from scipy.spatial import ConvexHull
 from sklearn.neighbors import KernelDensity
+import cv2 as cv
 
 import io_utils as ply
 from ransac import *
@@ -134,6 +135,64 @@ class Plane:
         return coords3d[:, :2] / (coords3d[:, -1].reshape(-1, 1) + 1e-7)
 
     @staticmethod
+    def coord2d_pix(points_2d, boundries_2d, h=64, w=64):
+
+        d_y = boundries_2d[:, 1].max() - boundries_2d[:, 1].min()
+        d_x = boundries_2d[:, 0].max() - boundries_2d[:, 0].min()
+
+        y_max, y_min = boundries_2d[:, 1].max() + 0.2 * d_y, boundries_2d[:, 1].min() - 0.2 * d_y
+        x_max, x_min = boundries_2d[:, 0].max() + 0.2 * d_x, boundries_2d[:, 0].min() - 0.2 * d_x
+
+        d_y = y_max - y_min
+        d_x = x_max - x_min
+
+        y2h = (points_2d[:, 1] - y_min) * h / d_y
+        x2w = (points_2d[:, 0] - x_min) * w / d_x
+
+        b2h = (boundries_2d[:, 1] - y_min) * h / d_y
+        b2w = (boundries_2d[:, 0] - x_min) * w / d_x
+
+        grid_space = np.zeros((h, w, 3), dtype='uint8')
+
+        grid_space[y2h.astype(int), x2w.astype(int), :] = (0, 255, 0)
+        grid_space[b2h.astype(int), b2w.astype(int), :] = (255, 0, 0)
+
+        return grid_space
+
+    @staticmethod
+    def detect_lines(img):
+
+        img_bw = img[:, :, 0]
+
+        new_image = np.zeros_like(img)
+
+        lines_p = cv.HoughLinesP(img_bw, rho=1, theta=np.pi / 180, threshold=0, minLineLength=0)
+        lines = cv.HoughLines(img_bw, rho=50, theta=np.pi / 180, threshold=3)
+
+        for x1, y1, x2, y2 in lines_p:
+            cv.line(new_image, (x1, y1), (x2, y2), (0, 255, 0), 1)
+
+        def drawhoughLinesOnImage(image, houghLines):
+            for line in houghLines:
+                for rho, theta in line:
+                    a = np.cos(theta)
+                    b = np.sin(theta)
+                    x0 = a * rho
+                    y0 = b * rho
+                    x1 = int(x0 + 1000 * (-b))
+                    y1 = int(y0 + 1000 * (a))
+                    x2 = int(x0 - 1000 * (-b))
+                    y2 = int(y0 - 1000 * (a))
+
+                    cv.line(image, (x1, y1), (x2, y2), (255, 0, 0), 1)
+
+        drawhoughLinesOnImage(new_image, lines)
+
+        new_image[img_bw == 255] = (0, 0, 255)
+
+        return new_image
+
+    @staticmethod
     def get_hull(points_2d):
         hull = ConvexHull(points_2d)
         verticies = points_2d[hull.vertices]
@@ -144,32 +203,42 @@ class Plane:
 
         boundry_points = np.concatenate((boundry_points, boundry_points[0].reshape(1, 2)), axis=0)
 
-        lines = [[boundry_points[0], boundry_points[1]]]
+        lines = cv.HoughLinesPointSet(boundry_points.astype(np.float32),
+                                      lines_max=3,
+                                      threshold=0,
+                                      min_rho=0,
+                                      max_rho=np.pi,
+                                      rho_step=10,
+                                      min_theta=0,
+                                      max_theta=np.pi / 2,
+                                      theta_step=np.pi / 180)
 
-        def stable_norm(v):
-            return np.linalg.norm(v) + 1e-7
+        # lines = [[boundry_points[0], boundry_points[1]]]
 
-        def calc_angle(line_1, line_2):
-            line_1 /= stable_norm(line_1)
-            line_2 /= stable_norm(line_2)
-            cos = np.dot(line_1, line_2)
-            return 180*np.abs(np.arccos(cos) / np.pi)
-
-        for idx in range(2, len(boundry_points)):
-
-            next_point = boundry_points[idx]
-
-            v1 = lines[-1][0] - lines[-1][1]
-            v2 = next_point - lines[-1][1]
-            ang = calc_angle(v1, v2)
-            print(ang)
-
-            if ang > ang_th:
-                lines[-1][1] = next_point
-
-            else:
-                lines.append([lines[-1][1], next_point])
-
-            plot_fun(boundry_points, np.array(lines).reshape(-1, 2))
+        # def stable_norm(v):
+        #     return np.linalg.norm(v) + 1e-7
+        #
+        # def calc_angle(line_1, line_2):
+        #     line_1 /= stable_norm(line_1)
+        #     line_2 /= stable_norm(line_2)
+        #     cos = np.dot(line_1, line_2)
+        #     return 180 * np.abs(np.arccos(cos) / np.pi)
+        #
+        # for idx in range(2, len(boundry_points)):
+        #
+        #     next_point = boundry_points[idx]
+        #
+        #     v1 = lines[-1][0] - lines[-1][1]
+        #     v2 = next_point - lines[-1][1]
+        #     ang = calc_angle(v1, v2)
+        #     print(ang)
+        #
+        #     if ang > ang_th:
+        #         lines[-1][1] = next_point
+        #
+        #     else:
+        #         lines.append([lines[-1][1], next_point])
+        #
+        #     plot_fun(boundry_points, np.array(lines).reshape(-1, 2))
 
         return np.array(lines).reshape(-1, 2)
