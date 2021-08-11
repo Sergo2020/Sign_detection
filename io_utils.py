@@ -138,3 +138,16 @@ def plot_fun(arr_y, arr_x=None, title: str = 'Title', y_label: str = 'y', x_labe
     plt.xlabel(x_label)
     plt.tight_layout()
     plt.show()
+
+def scatter_2d(arr_2d: np.array, hull: np.array,
+               title: str = 'Title', y_label: str = 'y', x_label: str = 'x' ):
+
+    plt.figure(figsize=(plot_size * 2, plot_size * 2))
+    plt.scatter(arr_2d[:,0], arr_2d[:,1], c = 'b')
+    plt.plot(hull[:, 0], hull[:, 1], c='r')
+    plt.grid(True)
+    plt.title(title)
+    plt.ylabel(y_label)
+    plt.xlabel(x_label)
+    plt.tight_layout()
+    plt.show()

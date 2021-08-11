@@ -1,6 +1,8 @@
 import os
 from pathlib import Path
 
+import numpy as np
+
 import algorithms as alg
 import io_utils as ply
 
@@ -14,7 +16,7 @@ def detect_sign(cluster_file_path: Path):
     scene = ply.Scene_viewer(points)
     sign_detector = alg.Sign_Detector()
 
-    scene.show_cluster(points, True)
+    # scene.show_cluster(points, True)
 
     sign_detector.fit_kde(points[:, -1])
     dens, dens_x = sign_detector.produce_density_arr(points[:, -1], 100, show=False)
@@ -27,12 +29,22 @@ def detect_sign(cluster_file_path: Path):
     points_plate, points_pole = sign_detector.separate_by_thresh(points)
 
     scene.show_cluster(points_plate, True)
-    scene.show_cluster(points_pole, True)
+    # scene.show_cluster(points_pole, True)
 
+    plate_plane = alg.Plane(points_plate, 0.75)
 
+    scene.show_cluster(np.concatenate((plate_plane.inliers, plate_plane.outliers), 0), True)
+
+    projected_points = plate_plane.project_points(points_plate)
+    scene.show_cluster(projected_points, True)
+
+    points_2d = plate_plane.projected_2d(projected_points)
+    hull, simplices, verticies = plate_plane.get_hull(points_2d)
+    ply.scatter_2d(points_2d, verticies)
 
 # TODO: Separate points by R - DONE
-# TODO: Check that all plane points are on the same surface (find normal?)
+# TODO: Check that all plane points are on the same surface - DONE
+# TODO: Project points to plane - DONE
 # TODO: Check what type of plane it is
 # TODO: Fix code and check for usability
 # TODO: Blender simulation - optional
