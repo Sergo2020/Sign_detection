@@ -13,11 +13,12 @@ from sklearn.neighbors import KernelDensity
 
 import lin_alg
 
+
 class BiModal:
     def __init__(self, bw: float = 2.5) -> None:
         # Bi Model density detection by KDE
 
-        self._kde = KernelDensity(kernel='gaussian', bandwidth=bw) # Initialization of KDE alg.
+        self._kde = KernelDensity(kernel='gaussian', bandwidth=bw)  # Initialization of KDE alg.
 
         self.pole_val = None
         self.plane_val = None
@@ -196,7 +197,6 @@ class Plate:
 
 def fit_plane_ransac(points: np.array, criteria_n: int,
                      iters: int = 1000, thresh: float = 0.01) -> (np.array, np.array, np.array):
-
     # RANSAC for plane fitting
     # Implementation based on https://github.com/htcr/plane-fitting
 
