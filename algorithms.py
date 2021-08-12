@@ -1,18 +1,26 @@
-from scipy.signal import find_peaks, argrelextrema
-from scipy.spatial import ConvexHull
-from sklearn.neighbors import KernelDensity
+'''
+Algorithmic functions and classes:
+    Bi model class - detection of bi modal density, based on KDE
+    Plate class - detection of plate orientation in 3D space and 2D shape
+    RANSAC function
+
+'''
+
 import cv2 as cv
+from scipy.signal import find_peaks, argrelextrema
+from sklearn.neighbors import KernelDensity
 
 import io_utils as ply
-from ransac import *
+import lin_alg
+import numpy as np
 
 
-class Sign_Detector:
+class Bi_Modal:
     def __init__(self, bw=2.5):
         self._kde = KernelDensity(kernel='gaussian', bandwidth=bw)
 
         self.pole_val = None
-        self.plane_val = None  # To be found
+        self.plane_val = None
         self.r_threshold = None
 
     def fit_kde(self, data):
@@ -56,17 +64,23 @@ class Sign_Detector:
         return data[plate_idx], data[np.bitwise_not(plate_idx)]
 
 
-class Plane:
-    def __init__(self, cluster_points, min_pers=0.75):
+class Plate:
+    def __init__(self, min_pers=0.75, pix_h = 64, pix_w = 64):
 
         self.coefs = {'A': 0.0, 'B': 0.0, 'C': 0.0, 'D': 0.0}
-        self.normal = np.zeros((3,))
+        self.areas = {'Triangle': 0, 'Circle': 0, 'Rectangle': 0}
+        self.shape = None
+
+        self.plane_normal = np.zeros((3,))
         self.inliers = None
         self.outliers = None
 
-        self.detect_plane_coefs(cluster_points, min_inliers_pers=min_pers)
+        self.min_pers= min_pers
 
-    def detect_plane_coefs(self, points, min_inliers_pers,
+        self.h = pix_h
+        self.w = pix_w
+
+    def detect_plane_coefs(self, points,
                            steps=3,
                            thresh_min=0.02,
                            thresh_max=0.08):
@@ -77,7 +91,10 @@ class Plane:
         fit_points = points.copy()
         fit_points[:, -1] = 1.0
 
-        min_n = int(min_inliers_pers * points.shape[0])
+        min_n = int(self.min_pers * points.shape[0])
+
+        inliers = []
+        outliers = []
 
         for th in np.linspace(thresh_min, thresh_max, steps):
             plane, inliers, outliers = fit_plane_LSE_RANSAC(fit_points, min_n,
@@ -88,9 +105,13 @@ class Plane:
                 print(f'Excpected amount {len(inliers)} is achived with threshold {th:.2f}')
                 break
 
+        if len(inliers) < min_n:
+            print(f'Only {len(inliers)}/{min_n} points form a plane. Plate is not detected')
+            return 0
+
         self.coefs = {'A': plane[0], 'B': plane[1], 'C': plane[2], 'D': plane[3]}
 
-        self.normal = np.array([self.coefs['A'], self.coefs['B'], self.coefs['C']])
+        self.plane_normal = np.array([self.coefs['A'], self.coefs['B'], self.coefs['C']])
 
         self.inliers = inliers
         self.outliers = outliers
@@ -100,153 +121,106 @@ class Plane:
 
         print(f' Inliers {len(self.inliers)}/{len(points)}')
 
-    def project_points(self, points):
+        return 1
+
+    def project_to_plate(self, points):
         """
         points(x, y, z)
         Projects the points with coordinates x, y, z onto the plane
         ax+by+cz+d = 0
         """
-
         if points.shape[1] > 3:
             coords = points[:, :3]
         else:
             coords = points
 
-        unit_normal = self.normal / np.linalg.norm(self.normal)
+        unit_normal = self.plane_normal / np.linalg.norm(self.plane_normal)
         plane_point = self.inliers[0, :3].reshape(1, 3)
 
-        points_from_point_in_plane = coords - plane_point
-        proj_onto_normal_vector = np.dot(points_from_point_in_plane,
-                                         unit_normal)
-        proj_onto_plane = (points_from_point_in_plane -
-                           proj_onto_normal_vector[:, None] * unit_normal)
-
-        points[:, :3] = plane_point + proj_onto_plane
+        points[:,:3] = lin_alg.project_3d(coords, plane_point, unit_normal)
 
         return points
 
-    @staticmethod
-    def projected_2d(projected_points):
-        if projected_points.shape[1] > 3:
-            coords3d = projected_points[:, :3]
-        else:
-            coords3d = projected_points
+    def rotate_plane(self, projected_points, expected_norm=np.array([0, 0, 1])):
 
-        return coords3d[:, :2] / (coords3d[:, -1].reshape(-1, 1) + 1e-7)
+        matrix = lin_alg.rotation_matrix_from_vectors(self.plane_normal, expected_norm)
 
-    @staticmethod
-    def coord2d_pix(points_2d, boundries_2d, h=64, w=64):
+        projected_points[:, :3] = projected_points[:, :3] @ matrix
 
-        d_y = boundries_2d[:, 1].max() - boundries_2d[:, 1].min()
-        d_x = boundries_2d[:, 0].max() - boundries_2d[:, 0].min()
+        pixel_points = lin_alg.coord2d_pix(projected_points, self.h, self.w)
 
-        y_max, y_min = boundries_2d[:, 1].max() + 0.2 * d_y, boundries_2d[:, 1].min() - 0.2 * d_y
-        x_max, x_min = boundries_2d[:, 0].max() + 0.2 * d_x, boundries_2d[:, 0].min() - 0.2 * d_x
+        return projected_points, pixel_points
 
-        d_y = y_max - y_min
-        d_x = x_max - x_min
+    def detect_shapes(self, img, draw = False):
 
-        y2h = (points_2d[:, 1] - y_min) * h / d_y
-        x2w = (points_2d[:, 0] - x_min) * w / d_x
+        indicies = np.where(img[:, :, 0] > 0)
 
-        b2h = (boundries_2d[:, 1] - y_min) * h / d_y
-        b2w = (boundries_2d[:, 0] - x_min) * w / d_x
+        points = np.array([(y, x) for y, x in zip(*indicies)])
 
-        grid_space = np.zeros((h, w, 3), dtype='uint8')
+        min_rect = cv.minAreaRect(points)
+        rect_points = cv.boxPoints(min_rect)
+        self.areas['Rectangle'] = cv.contourArea(rect_points)
 
-        grid_space[y2h.astype(int), x2w.astype(int), :] = (0, 255, 0)
-        grid_space[b2h.astype(int), b2w.astype(int), :] = (255, 0, 0)
+        min_circle = cv.minEnclosingCircle(points)
+        self.areas['Circle'] = np.pi * min_circle[1] ** 2
 
-        return grid_space
+        min_triangle = cv.minEnclosingTriangle(points.reshape(-1, 1, 2))
+        self.areas['Triangle'] = min_triangle[0]
 
-    @staticmethod
-    def detect_lines(img):
+        if draw:
+            rect_points = np.array([(x, y) for y, x in np.round(rect_points).astype(int)])
+            cv.drawContours(img, [rect_points], 0, (0, 0, 255), 1)
 
-        dummy = np.zeros_like(img)
+            center = (tuple([int(c) for c in min_circle[0][::-1]]))
+            cv.circle(img, center, int(min_circle[1]), (0, 255, 0), 1)
 
-        img_points = img[:, :, 1]
+            triag_points = np.array([(x, y) for y, x in np.round(min_triangle[1]).astype(int).squeeze(1)])
+            cv.drawContours(img, [triag_points], 0, (255, 0, 0), 1)
 
-        rectangle_dum = np.zeros_like(img_points)
-        traingle_dum = np.zeros_like(img_points)
-        circle_dum = np.zeros_like(img_points)
+        self.shape =  min(self.areas, key=self.areas.get)
 
-        idx = np.where(img[:, :, 1] > 0)
+        return self.shape
 
-        min_y, min_x = idx[0].min(), idx[1].min()
-        max_y, max_x = idx[0].max(), idx[1].max()
+def fit_plane_LSE_RANSAC(points, criteria_n, iters=1000, thresh=0.01, return_outlier_list=False):
+    # points: (x,y,z, 1)
+    # return:
+    #   plane: 1d array of four elements [a, b, c, d] of ax+by+cz+d = 0
+    #   inlier_list: 1d array of size N of inlier points
 
-        c_y, c_x = img_points.shape[0] // 2, img_points.shape[1] // 2
-        r = ((max_y - min_y) + (max_x - min_x)) // 4
+    max_inlier_num = -1
+    max_inlier_list = None
 
-        rectangle = [(min_x, min_y), (max_x, max_y)]
-        triangle = np.array([(min_x, min_y), (min_x, max_y), (max_x, (max_y + min_y) // 2)])
+    N = points.shape[0]
+    assert N >= 3
 
-        cv.rectangle(rectangle_dum, rectangle[0], rectangle[1], 255, -1)
-        cv.drawContours(traingle_dum, [triangle], 0, 255, -1)
-        cv.circle(circle_dum, (c_x, c_y), r, 255, -1)
-        triangle_inv_dum = cv.flip(traingle_dum, 1)
+    for i in range(iters):
+        chose_id = np.random.choice(N, 3, replace=False)
+        chose_points = points[chose_id, :]
+        tmp_plane = lin_alg.fit_plane_LSE(chose_points)
 
-        dummy[:, :, 0] = rectangle_dum
-        dummy[:, :, 1] = traingle_dum
-        dummy[:, :, 2] = circle_dum
+        dists = lin_alg.get_point_dist(points, tmp_plane)
+        tmp_inlier_list = np.where(dists < thresh)[0]
+        tmp_inliers = points[tmp_inlier_list, :]
+        num_inliers = tmp_inliers.shape[0]
+        if num_inliers > max_inlier_num:
+            max_inlier_num = num_inliers
+            max_inlier_list = tmp_inlier_list
 
-        dummy[idx] = 255
+            if criteria_n <= max_inlier_num:
+                break
 
-        rect = np.bitwise_and(img_points, rectangle_dum).sum() / img[:, :, 1].sum()
-        tria = np.bitwise_and(img_points, traingle_dum).sum() / img[:, :, 1].sum()
-        inv_tria = np.bitwise_and(img_points, triangle_inv_dum).sum() / img[:, :, 1].sum()
-        circ = np.bitwise_and(img_points, circle_dum).sum() / img[:, :, 1].sum()
+    final_points = points[max_inlier_list, :]
+    plane = lin_alg.fit_plane_LSE(final_points)
+    dists = lin_alg.get_point_dist(points, plane)
 
-        print(f'Point ratio captured by shape:\n Rectangle {rect:.2f} | Triangle {tria:.2f} | Inverted Triangle {inv_tria:.2f} | Circle {circ:.2f}')
-        return dummy
+    sorted_idx = np.argsort(dists)
+    dists = dists[sorted_idx]
+    points = points[sorted_idx]
 
-    @staticmethod
-    def get_hull(points_2d):
-        hull = ConvexHull(points_2d)
-        verticies = points_2d[hull.vertices]
-        return hull, verticies
+    inlier_list = np.where(dists < thresh)[0]
 
-    @staticmethod
-    def detect_shape(boundry_points, plot_fun, ang_th=90):  # points are ordered in counter-clockwise order
-
-        boundry_points = np.concatenate((boundry_points, boundry_points[0].reshape(1, 2)), axis=0)
-
-        lines = cv.HoughLinesPointSet(boundry_points.astype(np.float32),
-                                      lines_max=3,
-                                      threshold=0,
-                                      min_rho=0,
-                                      max_rho=np.pi,
-                                      rho_step=10,
-                                      min_theta=0,
-                                      max_theta=np.pi / 2,
-                                      theta_step=np.pi / 180)
-
-        # lines = [[boundry_points[0], boundry_points[1]]]
-
-        # def stable_norm(v):
-        #     return np.linalg.norm(v) + 1e-7
-        #
-        # def calc_angle(line_1, line_2):
-        #     line_1 /= stable_norm(line_1)
-        #     line_2 /= stable_norm(line_2)
-        #     cos = np.dot(line_1, line_2)
-        #     return 180 * np.abs(np.arccos(cos) / np.pi)
-        #
-        # for idx in range(2, len(boundry_points)):
-        #
-        #     next_point = boundry_points[idx]
-        #
-        #     v1 = lines[-1][0] - lines[-1][1]
-        #     v2 = next_point - lines[-1][1]
-        #     ang = calc_angle(v1, v2)
-        #     print(ang)
-        #
-        #     if ang > ang_th:
-        #         lines[-1][1] = next_point
-        #
-        #     else:
-        #         lines.append([lines[-1][1], next_point])
-        #
-        #     plot_fun(boundry_points, np.array(lines).reshape(-1, 2))
-
-        return np.array(lines).reshape(-1, 2)
+    if not return_outlier_list:
+        return plane, points[inlier_list]
+    else:
+        outlier_list = np.where(dists >= thresh)[0]
+        return plane, points[inlier_list], points[outlier_list]

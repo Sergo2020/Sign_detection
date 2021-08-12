@@ -1,73 +1,62 @@
-import os
 from pathlib import Path
 
 import numpy as np
 
 import algorithms as alg
-import io_utils as ply
+import io_utils as io
 
 
-# https://github.com/falcondai/py-ransac/blob/master/ransac.py
+def detect_sign(points, visualize=False, min_ratio=0.75):
+    scene = io.Scene_viewer(points)  # Initialization of scene view
+    sign_detector = alg.Bi_Modal()  # Initialization of bi modal detector
 
-
-def detect_sign(points):
-
-    scene = ply.Scene_viewer(points)
-    sign_detector = alg.Sign_Detector()
-
-    scene.show_cluster(points, True)
+    if visualize:
+        scene.show_cluster(points, True)  # Cluster preview
 
     sign_detector.fit_kde(points[:, -1])
     dens, dens_x = sign_detector.produce_density_arr(points[:, -1], 100, show=False)
     mode_status = sign_detector.detect_modes(dens_x, dens)
 
-    if mode_status != 1:
-        print('The cluster is not a sign.')
-        os.exit()
+    io.status_report(mode_status)  # Stops the execution if not a sign
 
-    points_plate, points_pole = sign_detector.separate_by_thresh(points)
+    points_plate, points_pole = sign_detector.separate_by_thresh(points)  # Two sets of points - pole and plate
 
-    scene.show_cluster(points_plate, True)
-    scene.show_cluster(points_pole, True)
+    if visualize:
+        scene.show_cluster(points_plate, True)  # Plate preview
+        scene.show_cluster(points_pole, True)  # Pole preview
 
-    plate_plane = alg.Plane(points_plate, 0.75)
+    plate_plane = alg.Plate(min_ratio)  # At least 75% of points have to form a plane
+    plate_status = plate_plane.detect_plane_coefs(points_plate)  # Detect the 3D plane coefficients and normal
 
-    scene.show_cluster(np.concatenate((plate_plane.inliers, plate_plane.outliers), 0), True)
+    io.status_report(plate_status)  # Stops the execution if not a sign
 
-    projected_points = plate_plane.project_points(points_plate)
-    scene.show_cluster(projected_points, True)
+    if visualize:
+        scene.show_cluster(np.concatenate((plate_plane.inliers, plate_plane.outliers), 0),
+                           True)  # Inliers and outliers preview
 
-    points_2d = plate_plane.projected_2d(projected_points)
-    hull, verticies = plate_plane.get_hull(points_2d)
+    projected_points = plate_plane.project_to_plate(points_plate)  # Project plate points to plate, including outliers
 
-    img = plate_plane.coord2d_pix(points_2d, verticies)
+    if visualize:
+        scene.show_cluster(projected_points, True)  # Preview the projected points
 
-    ply.show_image(img)
+    projected_points, img = plate_plane.rotate_plane(projected_points)  # Align plate plane with xy plane
 
-    lines = plate_plane.detect_lines(img)
-    ply.show_image(lines)
-    # ply.scatter_2d(points_2d, verticies)
+    if visualize:
+        io.show_image(img, title='Points in pixel space')  # Preview the image
 
-    # lines = plate_plane.detect_shape(verticies, ply.scatter_2d)
-    # ply.scatter_2d(points_2d, lines)
+    shape_type = plate_plane.detect_shapes(img)  # Check what shape suits the most to plate
 
+    print(f'The {shape_type} shaped sign is detected.')
 
-# TODO: Separate points by R - DONE
-# TODO: Check that all plane points are on the same surface - DONE
-# TODO: Project points to plane - DONE
-# TODO: Check what type of plane it is - DONE?
 # TODO: Fix code and check for usability
-# TODO: Blender simulation - optional - DONE
-# TODO: Fix projection and shape detection
 
 if __name__ == '__main__':
-    pole_path = Path(r"Objects\straight\pole.ply")
-    plate_path = Path(r"Objects\straight\triangle.ply")
+    pole_path = Path(r"Objects\rot_z\pole.ply")
+    plate_path = Path(r"Objects\rot_z\square.ply")
 
-    sim_points = ply.prep_scene(plate_path, pole_path)
-    detect_sign(sim_points)
-
+    sim_points = io.prep_scene(plate_path, pole_path)
+    detect_sign(sim_points, False, 0.6)
 
     # cluster_path = Path(r"Objects\cluster_2.csv")
-    # points = ply.read_csv(cluster_file_path)
+    # points = io.read_csv(cluster_path)
     # detect_sign(points)

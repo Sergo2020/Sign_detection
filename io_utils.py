@@ -1,6 +1,15 @@
+'''
+Input/Output functions:
+    Read data from files (*.ply, *.csv)
+    Data pre processing (for sim clusters)
+    Data visualization
+    Detection status check
+'''
+
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+import os
 
 plt.rc('xtick', labelsize=14)
 plt.rc('ytick', labelsize=14)
@@ -8,7 +17,6 @@ plt.rc('legend', fontsize=14)
 plt.rc('axes', labelsize=14)
 
 plot_size = 3
-
 
 def read_ply(path):
     data = pd.read_csv(path, header=None).values  # Read *.ply file as text
@@ -26,7 +34,6 @@ def read_csv(path):
     return points
 
 def organize_points(xyz, mean, sig):
-
     n_coords = len(xyz)
     r = np.random.normal(mean, sig, size=(n_coords, ))
 
@@ -40,7 +47,10 @@ def organize_points(xyz, mean, sig):
 def add_noise(arr):
     return arr + 0.05*np.random.randn(*arr.shape)
 
-
+def status_report(status):
+    if status != 1:
+        print('The cluster is not a sign.')
+        os.sys.exit() # If not a sign - exit the execution
 
 def prep_scene(path_plate, path_cone):
 
