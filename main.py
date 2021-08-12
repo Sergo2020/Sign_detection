@@ -8,8 +8,8 @@ Innoviz assigment:
 
 '''
 
-from pathlib import Path
 import argparse
+from pathlib import Path
 
 import numpy as np
 
@@ -22,19 +22,21 @@ def detect_sign(points, visualize=False, min_ratio=0.75):
     sign_detector = alg.Bi_Modal()  # Initialization of bi modal detector
 
     if visualize:
-        scene.show_cluster(points, True)  # Cluster preview
+        scene.show_cluster(points, False, title='Scene preview')
+        scene.show_cluster(points, True, title='Scaled scene preview')  # Cluster preview
 
     sign_detector.fit_kde(points[:, -1])
-    dens, dens_x = sign_detector.produce_density_arr(points[:, -1], 100, show=False) # Generation of smooth density function
-    mode_status = sign_detector.detect_modes(dens_x, dens) # Mode detection and threshold detection
+    dens, dens_x = sign_detector.produce_density_arr(points[:, -1], 100,
+                                                     show=False)  # Generation of smooth density function
+    mode_status = sign_detector.detect_modes(dens_x, dens)  # Mode detection and threshold detection
 
     io.status_report(mode_status)  # Stops the execution if not a sign
 
     points_plate, points_pole = sign_detector.separate_by_thresh(points)  # Two sets of points - pole and plate
 
     if visualize:
-        scene.show_cluster(points_plate, True)  # Plate preview
-        scene.show_cluster(points_pole, True)  # Pole preview
+        scene.show_cluster(points_plate, True, title='Plate preview')  # Plate preview
+        scene.show_cluster(points_pole, True, title='Pole preview')  # Pole preview
 
     plate_plane = alg.Plate(min_ratio)  # At least 75% of points have to form a plane
     plate_status = plate_plane.detect_plane_coefs(points_plate)  # Detect the 3D plane coefficients and normal
@@ -43,12 +45,12 @@ def detect_sign(points, visualize=False, min_ratio=0.75):
 
     if visualize:
         scene.show_cluster(np.concatenate((plate_plane.inliers, plate_plane.outliers), 0),
-                           True)  # Inliers and outliers preview
+                           True, title='Plate inliers vs outliers' )  # Inliers and outliers preview
 
     projected_points = plate_plane.project_to_plate(points_plate)  # Project plate points to plate, including outliers
 
     if visualize:
-        scene.show_cluster(projected_points, True)  # Preview the projected points
+        scene.show_cluster(projected_points, True, title = 'Projection preview')  # Preview the projected points
 
     projected_points, img = plate_plane.rotate_plane(projected_points)  # Align plate plane with xy plane
 
@@ -58,6 +60,7 @@ def detect_sign(points, visualize=False, min_ratio=0.75):
     shape_type = plate_plane.detect_shapes(img)  # Check what shape suits the most to plate
 
     print(f'The {shape_type} shaped sign is detected.')
+
 
 # TODO: Fix code and check for usability
 

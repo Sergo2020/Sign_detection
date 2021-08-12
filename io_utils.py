@@ -96,7 +96,7 @@ class Scene_viewer:
             self.scene_boundries[ax] = (self.scene_center[ax] - max_diff,
                                         self.scene_center[ax] + max_diff)
 
-    def show_cluster(self, points: np.array, scale2scene: bool = False) -> None:
+    def show_cluster(self, points, scale2scene = False, title = 'Title'):
 
         if scale2scene:  # Scaling all the axis according to maximal diffrence
             limits = self.scene_boundries
@@ -104,6 +104,7 @@ class Scene_viewer:
             limits = self._calc_limits(points)
 
         fig = plt.figure(figsize=(4 * plot_size, 4 * plot_size))
+        fig.suptitle(title, fontsize=16)
         ax_3d = fig.add_subplot(2, 2, 1, projection='3d')  # 3D, xy, yz, xz
         ax_3d.title.set_text('3D Scene')
         ax_3d.set_xlim3d(*limits['x'])
