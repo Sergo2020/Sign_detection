@@ -23,14 +23,12 @@ def read_ply(path):
     n_points = int(str(data[3]).split(' ')[-1][:-2])  # Extract number of vertices (points) from scene (cloud)
 
     points = data[10:10 + n_points]
-    # points is a numpy array of objects - strings by the format
-    # "[x y z]"
+    # points is a numpy array of objects - strings with the format "[x y z]"
     points = np.array([np.array(str(p)[2:-2].split(' '), dtype=float) for p in points])
     return points
 
-
 def read_csv(path):
-    points = pd.read_csv(path, header=None).values  # Read *.csv file as text
+    points = pd.read_csv(path, header=None).values  # Read *.csv file
     return points
 
 def organize_points(xyz, mean, sig):
@@ -44,8 +42,8 @@ def organize_points(xyz, mean, sig):
 
     return points
 
-def add_noise(arr):
-    return arr + 0.05*np.random.randn(*arr.shape)
+def add_noise(arr, noise_level = 0.05): # Simulate noise in point cloud
+    return arr + noise_level*np.random.randn(*arr.shape)
 
 def status_report(status):
     if status != 1:

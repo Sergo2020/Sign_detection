@@ -25,8 +25,8 @@ def detect_sign(points, visualize=False, min_ratio=0.75):
         scene.show_cluster(points, True)  # Cluster preview
 
     sign_detector.fit_kde(points[:, -1])
-    dens, dens_x = sign_detector.produce_density_arr(points[:, -1], 100, show=False)
-    mode_status = sign_detector.detect_modes(dens_x, dens)
+    dens, dens_x = sign_detector.produce_density_arr(points[:, -1], 100, show=False) # Generation of smooth density function
+    mode_status = sign_detector.detect_modes(dens_x, dens) # Mode detection and threshold detection
 
     io.status_report(mode_status)  # Stops the execution if not a sign
 
