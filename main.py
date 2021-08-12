@@ -17,9 +17,9 @@ import algorithms as alg
 import io_utils as io
 
 
-def detect_sign(points, visualize=False, min_ratio=0.75):
-    scene = io.Scene_viewer(points)  # Initialization of scene view
-    sign_detector = alg.Bi_Modal()  # Initialization of bi modal detector
+def detect_sign(points: np.array, visualize: bool = False, min_ratio: float = 0.75) -> None:
+    scene = io.SceneViewer(points)  # Initialization of scene view
+    sign_detector = alg.BiModal()  # Initialization of bi modal detector
 
     if visualize:
         scene.show_cluster(points, False, title='Scene preview')
@@ -45,12 +45,12 @@ def detect_sign(points, visualize=False, min_ratio=0.75):
 
     if visualize:
         scene.show_cluster(np.concatenate((plate_plane.inliers, plate_plane.outliers), 0),
-                           True, title='Plate inliers vs outliers' )  # Inliers and outliers preview
+                           True, title='Plate inliers vs outliers')  # Inliers and outliers preview
 
     projected_points = plate_plane.project_to_plate(points_plate)  # Project plate points to plate, including outliers
 
     if visualize:
-        scene.show_cluster(projected_points, True, title = 'Projection preview')  # Preview the projected points
+        scene.show_cluster(projected_points, True, title='Projection preview')  # Preview the projected points
 
     projected_points, img = plate_plane.rotate_plane(projected_points)  # Align plate plane with xy plane
 
@@ -73,8 +73,8 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    points = io.read_csv(args.cluster_path)
-    detect_sign(points, args.visual, args.min_ratio)
+    cluster_points = io.read_csv(args.cluster_path)
+    detect_sign(cluster_points, args.visual, args.min_ratio)
 
     # Simulated data with Blender software
     #

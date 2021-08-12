@@ -7,26 +7,26 @@ Algorithmic functions and classes:
 '''
 
 import cv2 as cv
+import numpy as np
 from scipy.signal import find_peaks, argrelextrema
 from sklearn.neighbors import KernelDensity
 
 import io_utils as ply
 import lin_alg
-import numpy as np
 
 
-class Bi_Modal:
-    def __init__(self, bw=2.5):
+class BiModal:
+    def __init__(self, bw: float = 2.5) -> None:
         self._kde = KernelDensity(kernel='gaussian', bandwidth=bw)
 
         self.pole_val = None
         self.plane_val = None
         self.r_threshold = None
 
-    def fit_kde(self, data):
+    def fit_kde(self, data: np.array) -> None:
         self._kde.fit(data.reshape(-1, 1))
 
-    def produce_density_arr(self, data, n_points=0, show=False):
+    def produce_density_arr(self, data: np.array, n_points: int = 0, show: bool = False) -> (np.array, np.array):
         if n_points <= 0:
             n_points = len(data)
         dens_x = np.linspace(data.min(), data.max(), n_points).reshape(-1, 1)
@@ -38,8 +38,8 @@ class Bi_Modal:
 
         return density, dens_x
 
-    def detect_modes(self, data, density_arr, min_dist =  0.25):
-        distance = min_dist * (data.max() - data.min())  # Minimum distance is 25% from overall range
+    def detect_modes(self, data: np.array, density_arr: np.array, min_dist: int = 0.25) -> int:
+        distance = min_dist * (data.max() - data.min())  # Minimum distance is min_dist*range from overall range
         peaks_idx = find_peaks(density_arr, distance=distance)[0]
 
         print(f'{len(peaks_idx)} modes are found.')
@@ -57,7 +57,7 @@ class Bi_Modal:
 
         return 1
 
-    def separate_by_thresh(self, data: np.array):
+    def separate_by_thresh(self, data: np.array) -> (np.array, np.array):
         plate_idx = (data[:, -1] > self.r_threshold)
         plate_idx = plate_idx
 
@@ -65,7 +65,7 @@ class Bi_Modal:
 
 
 class Plate:
-    def __init__(self, min_pers=0.75, pix_h = 64, pix_w = 64):
+    def __init__(self, min_pers: float = 0.75, pix_h: int = 64, pix_w: int = 64):
 
         self.coefs = {'A': 0.0, 'B': 0.0, 'C': 0.0, 'D': 0.0}
         self.areas = {'Triangle': 0, 'Circle': 0, 'Rectangle': 0}
@@ -75,19 +75,19 @@ class Plate:
         self.inliers = None
         self.outliers = None
 
-        self.min_pers= min_pers
+        self.min_pers = min_pers
 
         self.h = pix_h
         self.w = pix_w
 
-    def detect_plane_coefs(self, points,
-                           steps=3,
-                           thresh_min=0.02,
-                           thresh_max=0.08):
+    def detect_plane_coefs(self, points: np.array,
+                           steps: int = 3,
+                           thresh_min: float = 0.02,
+                           thresh_max: float = 0.08) -> int:
 
         # xyc = np.ones((points.shape[0], 3))
         # z = points[:,-1]
-
+        assert len(points.shape[1]) != 4, f'Expected dim is 4 : x, y, z, R'
         fit_points = points.copy()
         fit_points[:, -1] = 1.0
 
@@ -97,9 +97,8 @@ class Plate:
         outliers = []
 
         for th in np.linspace(thresh_min, thresh_max, steps):
-            plane, inliers, outliers = fit_plane_LSE_RANSAC(fit_points, min_n,
-                                                            thresh=th,
-                                                            return_outlier_list=True)
+            plane, inliers, outliers = fit_plane_ransac(fit_points, min_n,
+                                                        thresh=th)
 
             if len(inliers) >= min_n:
                 print(f'Excpected amount {len(inliers)} is achived with threshold {th:.2f}')
@@ -123,12 +122,14 @@ class Plate:
 
         return 1
 
-    def project_to_plate(self, points):
+    def project_to_plate(self, points: np.array) -> np.array:
         """
         points(x, y, z)
         Projects the points with coordinates x, y, z onto the plane
         ax+by+cz+d = 0
         """
+        assert len(points.shape[1]) < 3, f'Expected dim is 3 or 4 : x, y, z, R'
+
         if points.shape[1] > 3:
             coords = points[:, :3]
         else:
@@ -137,11 +138,12 @@ class Plate:
         unit_normal = self.plane_normal / np.linalg.norm(self.plane_normal)
         plane_point = self.inliers[0, :3].reshape(1, 3)
 
-        points[:,:3] = lin_alg.project_3d(coords, plane_point, unit_normal)
+        points[:, :3] = lin_alg.project_3d(coords, plane_point, unit_normal)
 
         return points
 
-    def rotate_plane(self, projected_points, expected_norm=np.array([0, 0, 1])):
+    def rotate_plane(self, projected_points: np.array,
+                     expected_norm: np.array = np.array([0, 0, 1])) -> (np.array, np.array):
 
         matrix = lin_alg.rotation_matrix_from_vectors(self.plane_normal, expected_norm)
 
@@ -151,7 +153,7 @@ class Plate:
 
         return projected_points, pixel_points
 
-    def detect_shapes(self, img, draw = False):
+    def detect_shapes(self, img: np.array, draw: bool = False) -> str:
 
         indicies = np.where(img[:, :, 0] > 0)
 
@@ -164,7 +166,7 @@ class Plate:
         min_circle = cv.minEnclosingCircle(points)
         self.areas['Circle'] = np.pi * min_circle[1] ** 2
 
-        min_triangle = cv.minEnclosingTriangle(points.reshape(-1, 1, 2))
+        min_triangle = cv.minEnclosingTriangle(points.reshape((-1, 1, 2)))
         self.areas['Triangle'] = min_triangle[0]
 
         if draw:
@@ -177,11 +179,13 @@ class Plate:
             triag_points = np.array([(x, y) for y, x in np.round(min_triangle[1]).astype(int).squeeze(1)])
             cv.drawContours(img, [triag_points], 0, (255, 0, 0), 1)
 
-        self.shape =  min(self.areas, key=self.areas.get)
+        self.shape = min(self.areas, key=self.areas.get)
 
         return self.shape
 
-def fit_plane_LSE_RANSAC(points, criteria_n, iters=1000, thresh=0.01, return_outlier_list=False):
+
+def fit_plane_ransac(points: np.array, criteria_n: int,
+                     iters: int = 1000, thresh: float = 0.01) -> (np.array, np.array, np.array):
     # points: (x,y,z, 1)
     # return:
     #   plane: 1d array of four elements [a, b, c, d] of ax+by+cz+d = 0
@@ -190,11 +194,11 @@ def fit_plane_LSE_RANSAC(points, criteria_n, iters=1000, thresh=0.01, return_out
     max_inlier_num = -1
     max_inlier_list = None
 
-    N = points.shape[0]
-    assert N >= 3
+    n = points.shape[0]
+    assert n >= 3, f'Number of points was {n}, expected => 3'
 
     for i in range(iters):
-        chose_id = np.random.choice(N, 3, replace=False)
+        chose_id = np.random.choice(n, 3, replace=False)
         chose_points = points[chose_id, :]
         tmp_plane = lin_alg.fit_plane_LSE(chose_points)
 
@@ -210,7 +214,7 @@ def fit_plane_LSE_RANSAC(points, criteria_n, iters=1000, thresh=0.01, return_out
                 break
 
     final_points = points[max_inlier_list, :]
-    plane = lin_alg.fit_plane_LSE(final_points)
+    plane = lin_alg.fit_plane_LSE(points=final_points)
     dists = lin_alg.get_point_dist(points, plane)
 
     sorted_idx = np.argsort(dists)
@@ -219,8 +223,5 @@ def fit_plane_LSE_RANSAC(points, criteria_n, iters=1000, thresh=0.01, return_out
 
     inlier_list = np.where(dists < thresh)[0]
 
-    if not return_outlier_list:
-        return plane, points[inlier_list]
-    else:
-        outlier_list = np.where(dists >= thresh)[0]
-        return plane, points[inlier_list], points[outlier_list]
+    outlier_list = np.where(dists >= thresh)[0]
+    return plane, points[inlier_list], points[outlier_list]

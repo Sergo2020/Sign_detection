@@ -6,10 +6,12 @@ Input/Output functions:
     Detection status check
 '''
 
+import os
+from pathlib import Path
+
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import os
 
 plt.rc('xtick', labelsize=14)
 plt.rc('ytick', labelsize=14)
@@ -18,7 +20,8 @@ plt.rc('axes', labelsize=14)
 
 plot_size = 3
 
-def read_ply(path):
+
+def read_ply(path: Path) -> np.array:
     data = pd.read_csv(path, header=None).values  # Read *.ply file as text
     n_points = int(str(data[3]).split(' ')[-1][:-2])  # Extract number of vertices (points) from scene (cloud)
 
@@ -27,31 +30,35 @@ def read_ply(path):
     points = np.array([np.array(str(p)[2:-2].split(' '), dtype=float) for p in points])
     return points
 
-def read_csv(path):
+
+def read_csv(path: Path) -> np.array:
     points = pd.read_csv(path, header=None).values  # Read *.csv file
     return points
 
-def organize_points(xyz, mean, sig):
+
+def organize_points(xyz: np.array, mean: float, sig: float) -> np.array:
     n_coords = len(xyz)
-    r = np.random.normal(mean, sig, size=(n_coords, ))
+    r = np.random.normal(mean, sig, size=(n_coords,))
 
     points = np.zeros((n_coords, 4))
 
-    points[:,:3] = xyz
-    points[:,-1] = r
+    points[:, :3] = xyz
+    points[:, -1] = r
 
     return points
 
-def add_noise(arr, noise_level = 0.05): # Simulate noise in point cloud
-    return arr + noise_level*np.random.randn(*arr.shape)
 
-def status_report(status):
+def add_noise(arr: np.array, noise_level: float = 0.05):  # Simulate noise in point cloud
+    return arr + noise_level * np.random.randn(*arr.shape)
+
+
+def status_report(status: int) -> None:
     if status != 1:
         print('The cluster is not a sign.')
-        os.sys.exit() # If not a sign - exit the execution
+        os.sys.exit()  # If not a sign - exit the execution
 
-def prep_scene(path_plate, path_cone):
 
+def prep_scene(path_plate: np.array, path_cone: np.array) -> np.array:
     xyz_plate = read_ply(path_plate)
     xyz_cone = read_ply(path_cone)
 
@@ -67,8 +74,8 @@ def prep_scene(path_plate, path_cone):
     return points_scene
 
 
-class Scene_viewer:
-    def __init__(self, scene_points):
+class SceneViewer:
+    def __init__(self, scene_points: np.array) -> None:
 
         self.coord_system = ('x', 'y', 'z')
         self.scene_center = None
@@ -77,7 +84,7 @@ class Scene_viewer:
         self.scene_boundries = self._calc_limits(scene_points)
         self._set_scene(scene_points)
 
-    def _calc_limits(self, points):
+    def _calc_limits(self, points: np.array) -> dict:
         limits = {}
 
         for ax_idx, ax in enumerate(self.coord_system):
@@ -85,7 +92,7 @@ class Scene_viewer:
 
         return limits
 
-    def _set_scene(self, scene_points):
+    def _set_scene(self, scene_points: np.array) -> None:
 
         self.scene_center = {k: c for (k, c) in zip(self.coord_system, scene_points[:, :-1].mean(0))}
         self.scene_boundries = self._calc_limits(scene_points)
@@ -96,7 +103,7 @@ class Scene_viewer:
             self.scene_boundries[ax] = (self.scene_center[ax] - max_diff,
                                         self.scene_center[ax] + max_diff)
 
-    def show_cluster(self, points, scale2scene = False, title = 'Title'):
+    def show_cluster(self, points: np.array, scale2scene: bool = False, title: str = 'Title') -> None:
 
         if scale2scene:  # Scaling all the axis according to maximal diffrence
             limits = self.scene_boundries
@@ -150,11 +157,11 @@ class Scene_viewer:
         plt.show()
 
 
-def plot_hitogram(points, n_bins):
+def plot_hitogram(points: np.array, n_bins: int):
     y_labels = ['x values', 'y values', 'z values', 'R values']
 
-    def plot_subhist(ax, data, n_bins, y_label):
-        ax.hist(data, bins=n_bins)
+    def plot_subhist(ax, data, bins, y_label):
+        ax.hist(data, bins=bins)
         ax.set_ylabel('Amount')
         ax.set_xlabel(y_label)
         ax.grid(True)
@@ -162,13 +169,14 @@ def plot_hitogram(points, n_bins):
     fig = plt.figure(figsize=(4 * plot_size, 4 * plot_size), tight_layout=True)
 
     for val_idx, label in enumerate(y_labels):
-        ax = fig.add_subplot(2, 2, val_idx + 1)
-        plot_subhist(ax, points[:, val_idx], n_bins, label)
+        c_ax = fig.add_subplot(2, 2, val_idx + 1)
+        plot_subhist(c_ax, points[:, val_idx], n_bins, label)
 
     plt.show()
 
 
-def plot_fun(arr_y, arr_x=None, title: str = 'Title', y_label: str = 'y', x_label: str = 'x'):
+def plot_fun(arr_y: np.array, arr_x: (None, np.array) = None,
+             title: str = 'Title', y_label: str = 'y', x_label: str = 'x') -> None:
     if arr_x is None:
         arr_x = range(len(arr_y))
 
@@ -181,11 +189,11 @@ def plot_fun(arr_y, arr_x=None, title: str = 'Title', y_label: str = 'y', x_labe
     plt.tight_layout()
     plt.show()
 
-def scatter_2d(arr_2d: np.array, hull: np.array,
-               title: str = 'Title', y_label: str = 'y', x_label: str = 'x' ):
 
+def scatter_2d(arr_2d: np.array, hull: np.array,
+               title: str = 'Title', y_label: str = 'y', x_label: str = 'x') -> None:
     plt.figure(figsize=(plot_size * 2, plot_size * 2))
-    plt.scatter(arr_2d[:,0], arr_2d[:,1], c = 'b')
+    plt.scatter(arr_2d[:, 0], arr_2d[:, 1], c='b')
     plt.plot(hull[:, 0], hull[:, 1], c='r')
     plt.grid(True)
     plt.title(title)
@@ -194,9 +202,9 @@ def scatter_2d(arr_2d: np.array, hull: np.array,
     plt.tight_layout()
     plt.show()
 
-def show_image(img_np: np.array,
-               title: str = 'Image', y_label: str = 'y', x_label: str = 'x' ):
 
+def show_image(img_np: np.array,
+               title: str = 'Image', y_label: str = 'y', x_label: str = 'x') -> None:
     plt.figure(figsize=(plot_size * 2, plot_size * 2))
     plt.imshow(img_np)
     plt.title(title)
