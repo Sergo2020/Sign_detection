@@ -56,7 +56,7 @@ def detect_sign(cluster_file_path: Path):
 # TODO: Separate points by R - DONE
 # TODO: Check that all plane points are on the same surface - DONE
 # TODO: Project points to plane - DONE
-# TODO: Check what type of plane it is
+# TODO: Check what type of plane it is - DONE?
 # TODO: Fix code and check for usability
 # TODO: Blender simulation - optional
 

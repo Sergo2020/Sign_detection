@@ -25,6 +25,30 @@ def read_csv(path):
     points = pd.read_csv(path, header=None).values  # Read *.csv file as text
     return points
 
+def organize_points(xyz, mean, sig):
+
+    n_coords = len(xyz)
+    r = np.random.normal(mean, sig, size=(n_coords, 1))
+
+    points = np.zeros((n_coords, 4))
+
+    points[:,:3] = xyz
+    points[:,-1] = r
+
+    return points
+
+
+def prep_scene(path_plate, path_cone):
+    xyz_plate = read_ply(path_plate)
+    xyz_cone = read_ply(path_cone)
+
+    points_plate = organize_points(xyz_plate, 115, 1)
+    points_cone = organize_points(xyz_cone, 25, 1)
+
+    points_scene = np.concatenate((points_plate, points_cone), 0)
+
+    return points_scene
+
 
 class Scene_viewer:
     def __init__(self, scene_points):
