@@ -57,11 +57,12 @@ def detect_sign(points):
 # TODO: Project points to plane - DONE
 # TODO: Check what type of plane it is - DONE?
 # TODO: Fix code and check for usability
-# TODO: Blender simulation - optional
+# TODO: Blender simulation - optional - DONE
+# TODO: Fix projection and shape detection
 
 if __name__ == '__main__':
-    pole_path = Path(r"Objects\rot_z\pole.ply")
-    plate_path = Path(r"Objects\rot_z\triangle.ply")
+    pole_path = Path(r"Objects\straight\pole.ply")
+    plate_path = Path(r"Objects\straight\triangle.ply")
 
     sim_points = ply.prep_scene(plate_path, pole_path)
     detect_sign(sim_points)
