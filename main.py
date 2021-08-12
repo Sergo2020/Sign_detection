@@ -26,8 +26,7 @@ def detect_sign(points: np.array, visualize: bool = False, min_ratio: float = 0.
         scene.show_cluster(points, True, title='Scaled scene preview')  # Cluster preview
 
     sign_detector.fit_kde(points[:, -1])
-    dens, dens_x = sign_detector.produce_density_arr(points[:, -1], 100,
-                                                     show=False)  # Generation of smooth density function
+    dens, dens_x = sign_detector.produce_density_arr(points[:, -1], 100)  # Generation of smooth density function
     mode_status = sign_detector.detect_modes(dens_x, dens)  # Mode detection and threshold detection
 
     io.status_report(mode_status)  # Stops the execution if not a sign
@@ -57,9 +56,10 @@ def detect_sign(points: np.array, visualize: bool = False, min_ratio: float = 0.
     if visualize:
         io.show_image(img, title='Points in pixel space')  # Preview the image
 
-    shape_type = plate_plane.detect_shapes(img)  # Check what shape suits the most to plate
+    img = plate_plane.detect_shapes(img)  # Check what shape suits the most to plate
 
-    print(f'The {shape_type} shaped sign is detected.')
+    if visualize:
+        io.show_image(img, title='Points bounded by sign estimated plate shape')
 
 
 # TODO: Fix code and check for usability

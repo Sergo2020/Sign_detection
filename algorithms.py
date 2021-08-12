@@ -11,7 +11,7 @@ import numpy as np
 from scipy.signal import find_peaks, argrelextrema
 from sklearn.neighbors import KernelDensity
 
-import io_utils as ply
+import io_utils as io
 import lin_alg
 
 
@@ -26,15 +26,12 @@ class BiModal:
     def fit_kde(self, data: np.array) -> None:
         self._kde.fit(data.reshape(-1, 1))
 
-    def produce_density_arr(self, data: np.array, n_points: int = 0, show: bool = False) -> (np.array, np.array):
+    def produce_density_arr(self, data: np.array, n_points: int = 0) -> (np.array, np.array):
         if n_points <= 0:
             n_points = len(data)
         dens_x = np.linspace(data.min(), data.max(), n_points).reshape(-1, 1)
 
         density = np.exp(self._kde.score_samples(dens_x))
-
-        if show:
-            ply.plot_fun(density, dens_x, title='Estimated density')
 
         return density, dens_x
 
@@ -87,7 +84,7 @@ class Plate:
 
         # xyc = np.ones((points.shape[0], 3))
         # z = points[:,-1]
-        assert len(points.shape[1]) != 4, f'Expected dim is 4 : x, y, z, R'
+
         fit_points = points.copy()
         fit_points[:, -1] = 1.0
 
@@ -128,7 +125,6 @@ class Plate:
         Projects the points with coordinates x, y, z onto the plane
         ax+by+cz+d = 0
         """
-        assert len(points.shape[1]) < 3, f'Expected dim is 3 or 4 : x, y, z, R'
 
         if points.shape[1] > 3:
             coords = points[:, :3]
@@ -169,19 +165,25 @@ class Plate:
         min_triangle = cv.minEnclosingTriangle(points.reshape((-1, 1, 2)))
         self.areas['Triangle'] = min_triangle[0]
 
-        if draw:
-            rect_points = np.array([(x, y) for y, x in np.round(rect_points).astype(int)])
-            cv.drawContours(img, [rect_points], 0, (0, 0, 255), 1)
-
-            center = (tuple([int(c) for c in min_circle[0][::-1]]))
-            cv.circle(img, center, int(min_circle[1]), (0, 255, 0), 1)
-
-            triag_points = np.array([(x, y) for y, x in np.round(min_triangle[1]).astype(int).squeeze(1)])
-            cv.drawContours(img, [triag_points], 0, (255, 0, 0), 1)
-
         self.shape = min(self.areas, key=self.areas.get)
 
-        return self.shape
+        print(f'The {self.shape} shaped sign is detected.')
+
+        if draw:
+
+            if self.shape == 'Rectangle':
+                rect_points = np.array([(x, y) for y, x in np.round(rect_points).astype(int)])
+                cv.drawContours(img, [rect_points], 0, (0, 0, 255), 1)
+
+            if self.shape == 'Circle':
+                center = (tuple([int(c) for c in min_circle[0][::-1]]))
+                cv.circle(img, center, int(min_circle[1]), (0, 255, 0), 1)
+
+            if self.shape == 'Triangle':
+                triag_points = np.array([(x, y) for y, x in np.round(min_triangle[1]).astype(int).squeeze(1)])
+                cv.drawContours(img, [triag_points], 0, (255, 0, 0), 1)
+
+        return img
 
 
 def fit_plane_ransac(points: np.array, criteria_n: int,

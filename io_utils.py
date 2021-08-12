@@ -58,12 +58,12 @@ def status_report(status: int) -> None:
         os.sys.exit()  # If not a sign - exit the execution
 
 
-def prep_scene(path_plate: np.array, path_cone: np.array) -> np.array:
+def prep_scene(path_plate: np.array, path_cone: np.array, noise_level = 0.05) -> np.array:
     xyz_plate = read_ply(path_plate)
     xyz_cone = read_ply(path_cone)
 
-    xyz_plate = add_noise(xyz_plate)
-    xyz_cone = add_noise(xyz_cone)
+    xyz_plate = add_noise(xyz_plate, noise_level)
+    xyz_cone = add_noise(xyz_cone, noise_level)
 
     points_plate = organize_points(xyz_plate, 115, 5)
     points_cone = organize_points(xyz_cone, 25, 5)
