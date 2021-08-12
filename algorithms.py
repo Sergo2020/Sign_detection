@@ -209,7 +209,7 @@ def fit_plane_ransac(points: np.array, criteria_n: int,
     for i in range(iters):
         chose_id = np.random.choice(n, 3, replace=False)
         chose_points = points[chose_id, :]
-        tmp_plane = lin_alg.fit_plane_LSE(chose_points)
+        tmp_plane = lin_alg.fit_plane_lse(chose_points)
 
         dists = lin_alg.get_point_dist(points, tmp_plane)
         tmp_inlier_list = np.where(dists < thresh)[0]
@@ -223,7 +223,7 @@ def fit_plane_ransac(points: np.array, criteria_n: int,
                 break
 
     final_points = points[max_inlier_list, :]
-    plane = lin_alg.fit_plane_LSE(points=final_points)
+    plane = lin_alg.fit_plane_lse(points=final_points)
     dists = lin_alg.get_point_dist(points, plane)
 
     sorted_idx = np.argsort(dists)

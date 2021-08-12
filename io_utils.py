@@ -20,6 +20,7 @@ plt.rc('axes', labelsize=14)
 
 plot_size = 3
 
+
 class SceneViewer:
     def __init__(self, scene_points: np.array) -> None:
         # Scene class. Contains information of point cloud location and coordinate range.
@@ -53,7 +54,8 @@ class SceneViewer:
                                         self.scene_center[ax] + max_diff)
 
     def show_cluster(self, points: np.array, scale2scene: bool = False, title: str = 'Title') -> None:
-        # Show cluster in 3D and 2D projections. If scale2scene is True scene is scale according to initial point cluster
+        # Show cluster in 3D and 2D projections.
+        # If scale2scene is True scene is scale according to initial point cluster
 
         if scale2scene:  # Scaling all the axis according to maximal difference
             limits = self.scene_boundries
@@ -162,7 +164,6 @@ def prep_scene(path_plate: Path, path_cone: Path, noise_level=0.05) -> np.array:
     points_scene = np.random.permutation(points_scene)
 
     return points_scene
-
 
 
 def plot_hitogram(points: np.array, n_bins: int):

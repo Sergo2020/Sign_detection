@@ -5,13 +5,12 @@ Support linear algebra function:
     Projection calculation
 
 '''
-
 import numpy as np
 import numpy.linalg as la
 
 
-
 def project_3d(coords, plane_point, unit_normal):
+    # Project points to plane in 3D space, that is defined by unit vector
 
     points_from_point_in_plane = coords - plane_point
     proj_onto_normal_vector = np.dot(points_from_point_in_plane,
@@ -25,11 +24,8 @@ def project_3d(coords, plane_point, unit_normal):
 
 
 def rotation_matrix_from_vectors(vec1, vec2):
-    """ Find the rotation matrix that aligns vec1 to vec2
-    :param vec1: A 3d "source" vector
-    :param vec2: A 3d "destination" vector
-    :return mat: A transform matrix (3x3) which when applied to vec1, aligns it with vec2.
-    """
+    # Estimation of rotation matrix from vec1 to vec2
+
     a, b = (vec1 / np.linalg.norm(vec1)).reshape(3), (vec2 / np.linalg.norm(vec2)).reshape(3)
     v = np.cross(a, b)
     c = np.dot(a, b)
@@ -38,7 +34,9 @@ def rotation_matrix_from_vectors(vec1, vec2):
     rotation_matrix = np.eye(3) + kmat + kmat.dot(kmat) * ((1 - c) / (s ** 2))
     return rotation_matrix
 
+
 def coord2d_pix(points_2d, h=64, w=64):
+    # Translation of projected coordinates to pixel space
 
     d_y = points_2d[:, 1].max() - points_2d[:, 1].min()
     d_x = points_2d[:, 0].max() - points_2d[:, 0].min()
@@ -57,8 +55,9 @@ def coord2d_pix(points_2d, h=64, w=64):
 
     return grid_space
 
-def points_svd(points):  # V is a base
 
+def points_svd(points):
+    # SVD decomposition of points (N,3)
     if len(points.shape) > 3:
         points = points[:, :3]
 
@@ -67,15 +66,17 @@ def points_svd(points):  # V is a base
     S[:s.shape[0], :s.shape[0]] = np.diag(s)
     return u, S, vh
 
-def fit_plane_LSE(points): # Find null space of orthogonal plane, i.e. ax+by+cz+d
+
+def fit_plane_lse(points):
+    # Detection of null space (normal) for point set
 
     assert points.shape[0] >= 3
-    U, S, Vt = points_svd(points)
-    null_space = Vt[-1, :]
+    _, _, vt = points_svd(points)
+    null_space = vt[-1, :]
     return null_space
 
+
 def get_point_dist(points, plane):
-
-    dists = np.abs(points @ plane) / np.sqrt(plane[0]**2 + plane[1]**2 + plane[2]**2)
+    # Calculation of distance between points and plane
+    dists = np.abs(points @ plane) / np.sqrt(plane[0] ** 2 + plane[1] ** 2 + plane[2] ** 2)
     return dists
-
