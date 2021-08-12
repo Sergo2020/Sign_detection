@@ -1,4 +1,15 @@
+'''
+Innoviz assigment:
+    Sign detection and classification by point cloud.
+
+    Simulation data is commented out below.
+
+    Sergey Sinitsa
+
+'''
+
 from pathlib import Path
+import argparse
 
 import numpy as np
 
@@ -51,12 +62,21 @@ def detect_sign(points, visualize=False, min_ratio=0.75):
 # TODO: Fix code and check for usability
 
 if __name__ == '__main__':
-    pole_path = Path(r"Objects\rot_z\pole.ply")
-    plate_path = Path(r"Objects\rot_z\square.ply")
+    parser = argparse.ArgumentParser()
 
-    sim_points = io.prep_scene(plate_path, pole_path)
-    detect_sign(sim_points, False, 0.6)
+    parser.add_argument("-c", "--cluster_path", default=Path(r"Objects\cluster_2.csv"), required=False)
+    parser.add_argument("-p", "--min_ratio", default=0.75, required=False)
+    parser.add_argument("-v", "--visual", default=False, required=False)
 
-    # cluster_path = Path(r"Objects\cluster_2.csv")
-    # points = io.read_csv(cluster_path)
-    # detect_sign(points)
+    args = parser.parse_args()
+
+    points = io.read_csv(args.cluster_path)
+    detect_sign(points, args.visual, args.min_ratio)
+
+    # Simulated data with Blender software
+    #
+    # pole_path = Path(r"Objects\rot_z\pole.ply")
+    # plate_path = Path(r"Objects\rot_z\square.ply")
+    #
+    # sim_points = io.prep_scene(plate_path, pole_path)
+    # detect_sign(sim_points, False, 0.6)

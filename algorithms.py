@@ -38,8 +38,8 @@ class Bi_Modal:
 
         return density, dens_x
 
-    def detect_modes(self, data, density_arr, ):
-        distance = 0.25 * (data.max() - data.min())  # Minimum distance is 25% from overall range
+    def detect_modes(self, data, density_arr, min_dist =  0.25):
+        distance = min_dist * (data.max() - data.min())  # Minimum distance is 25% from overall range
         peaks_idx = find_peaks(density_arr, distance=distance)[0]
 
         print(f'{len(peaks_idx)} modes are found.')
