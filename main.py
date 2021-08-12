@@ -10,8 +10,7 @@ import io_utils as ply
 # https://github.com/falcondai/py-ransac/blob/master/ransac.py
 
 
-def detect_sign(cluster_file_path: Path):
-    points = ply.read_csv(cluster_path)
+def detect_sign(points):
 
     scene = ply.Scene_viewer(points)
     sign_detector = alg.Sign_Detector()
@@ -61,7 +60,13 @@ def detect_sign(cluster_file_path: Path):
 # TODO: Blender simulation - optional
 
 if __name__ == '__main__':
-    obj_path = Path(r"Objects\cube.ply")
-    cluster_path = Path(r"Objects\cluster_2.csv")
+    pole_path = Path(r"Objects\rot_z\pole.ply")
+    plate_path = Path(r"Objects\rot_z\triangle.ply")
 
-    detect_sign(cluster_path)
+    sim_points = ply.prep_scene(plate_path, pole_path)
+    detect_sign(sim_points)
+
+
+    # cluster_path = Path(r"Objects\cluster_2.csv")
+    # points = ply.read_csv(cluster_file_path)
+    # detect_sign(points)

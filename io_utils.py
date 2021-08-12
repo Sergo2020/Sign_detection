@@ -28,7 +28,7 @@ def read_csv(path):
 def organize_points(xyz, mean, sig):
 
     n_coords = len(xyz)
-    r = np.random.normal(mean, sig, size=(n_coords, 1))
+    r = np.random.normal(mean, sig, size=(n_coords, ))
 
     points = np.zeros((n_coords, 4))
 
@@ -37,15 +37,24 @@ def organize_points(xyz, mean, sig):
 
     return points
 
+def add_noise(arr):
+    return arr + 0.05*np.random.randn(*arr.shape)
+
+
 
 def prep_scene(path_plate, path_cone):
+
     xyz_plate = read_ply(path_plate)
     xyz_cone = read_ply(path_cone)
 
-    points_plate = organize_points(xyz_plate, 115, 1)
-    points_cone = organize_points(xyz_cone, 25, 1)
+    xyz_plate = add_noise(xyz_plate)
+    xyz_cone = add_noise(xyz_cone)
+
+    points_plate = organize_points(xyz_plate, 115, 5)
+    points_cone = organize_points(xyz_cone, 25, 5)
 
     points_scene = np.concatenate((points_plate, points_cone), 0)
+    points_scene = np.random.permutation(points_scene)
 
     return points_scene
 
