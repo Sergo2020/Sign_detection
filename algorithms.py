@@ -11,22 +11,26 @@ import numpy as np
 from scipy.signal import find_peaks, argrelextrema
 from sklearn.neighbors import KernelDensity
 
-import io_utils as io
 import lin_alg
-
 
 class BiModal:
     def __init__(self, bw: float = 2.5) -> None:
-        self._kde = KernelDensity(kernel='gaussian', bandwidth=bw)
+        # Bi Model density detection by KDE
+
+        self._kde = KernelDensity(kernel='gaussian', bandwidth=bw) # Initialization of KDE alg.
 
         self.pole_val = None
         self.plane_val = None
         self.r_threshold = None
 
     def fit_kde(self, data: np.array) -> None:
+        # KDE fit by reflectivity (data expected to have shape of (N,) or (N,1))
+
         self._kde.fit(data.reshape(-1, 1))
 
     def produce_density_arr(self, data: np.array, n_points: int = 0) -> (np.array, np.array):
+        # Generation of dummy reflectance values in the range of found reflectivity
+
         if n_points <= 0:
             n_points = len(data)
         dens_x = np.linspace(data.min(), data.max(), n_points).reshape(-1, 1)
@@ -36,6 +40,8 @@ class BiModal:
         return density, dens_x
 
     def detect_modes(self, data: np.array, density_arr: np.array, min_dist: int = 0.25) -> int:
+        # Number of modes detection by simulated density function
+
         distance = min_dist * (data.max() - data.min())  # Minimum distance is min_dist*range from overall range
         peaks_idx = find_peaks(density_arr, distance=distance)[0]
 
@@ -46,7 +52,8 @@ class BiModal:
             return 0
 
         # find_peaks scans from the lowest values to higher,
-        # thus first value is for pole with lower R
+        # thus first peak value is pole related as it has lower R
+
         self.pole_val, self.plane_val = data[peaks_idx[0]], data[peaks_idx[1]]
 
         min_idx = argrelextrema(density_arr[peaks_idx[0]: peaks_idx[-1]], np.less)[0]
@@ -55,6 +62,8 @@ class BiModal:
         return 1
 
     def separate_by_thresh(self, data: np.array) -> (np.array, np.array):
+        # Separate reflectivity by detected threshold
+
         plate_idx = (data[:, -1] > self.r_threshold)
         plate_idx = plate_idx
 
@@ -63,6 +72,8 @@ class BiModal:
 
 class Plate:
     def __init__(self, min_pers: float = 0.75, pix_h: int = 64, pix_w: int = 64):
+        # Sign plate class. Contains plate orientation parameters, methods for orientation detection and
+        # shape related methods
 
         self.coefs = {'A': 0.0, 'B': 0.0, 'C': 0.0, 'D': 0.0}
         self.areas = {'Triangle': 0, 'Circle': 0, 'Rectangle': 0}
@@ -81,9 +92,7 @@ class Plate:
                            steps: int = 3,
                            thresh_min: float = 0.02,
                            thresh_max: float = 0.08) -> int:
-
-        # xyc = np.ones((points.shape[0], 3))
-        # z = points[:,-1]
+        # Plate plane coefficient estimation by RANSAC
 
         fit_points = points.copy()
         fit_points[:, -1] = 1.0
@@ -120,11 +129,7 @@ class Plate:
         return 1
 
     def project_to_plate(self, points: np.array) -> np.array:
-        """
-        points(x, y, z)
-        Projects the points with coordinates x, y, z onto the plane
-        ax+by+cz+d = 0
-        """
+        # Projection of points to plate plane
 
         if points.shape[1] > 3:
             coords = points[:, :3]
@@ -140,6 +145,8 @@ class Plate:
 
     def rotate_plane(self, projected_points: np.array,
                      expected_norm: np.array = np.array([0, 0, 1])) -> (np.array, np.array):
+        # Rotation matrix estimation ,rotation of points to align with pre defined (expected_norm)
+        # plane for further translation to pixel space
 
         matrix = lin_alg.rotation_matrix_from_vectors(self.plane_normal, expected_norm)
 
@@ -150,6 +157,7 @@ class Plate:
         return projected_points, pixel_points
 
     def detect_shapes(self, img: np.array, draw: bool = False) -> str:
+        # Detect shapes from points in pixel space
 
         indicies = np.where(img[:, :, 0] > 0)
 
@@ -188,10 +196,9 @@ class Plate:
 
 def fit_plane_ransac(points: np.array, criteria_n: int,
                      iters: int = 1000, thresh: float = 0.01) -> (np.array, np.array, np.array):
-    # points: (x,y,z, 1)
-    # return:
-    #   plane: 1d array of four elements [a, b, c, d] of ax+by+cz+d = 0
-    #   inlier_list: 1d array of size N of inlier points
+
+    # RANSAC for plane fitting
+    # Implementation based on https://github.com/htcr/plane-fitting
 
     max_inlier_num = -1
     max_inlier_list = None

@@ -20,71 +20,19 @@ plt.rc('axes', labelsize=14)
 
 plot_size = 3
 
-
-def read_ply(path: Path) -> np.array:
-    data = pd.read_csv(path, header=None).values  # Read *.ply file as text
-    n_points = int(str(data[3]).split(' ')[-1][:-2])  # Extract number of vertices (points) from scene (cloud)
-
-    points = data[10:10 + n_points]
-    # points is a numpy array of objects - strings with the format "[x y z]"
-    points = np.array([np.array(str(p)[2:-2].split(' '), dtype=float) for p in points])
-    return points
-
-
-def read_csv(path: Path) -> np.array:
-    points = pd.read_csv(path, header=None).values  # Read *.csv file
-    return points
-
-
-def organize_points(xyz: np.array, mean: float, sig: float) -> np.array:
-    n_coords = len(xyz)
-    r = np.random.normal(mean, sig, size=(n_coords,))
-
-    points = np.zeros((n_coords, 4))
-
-    points[:, :3] = xyz
-    points[:, -1] = r
-
-    return points
-
-
-def add_noise(arr: np.array, noise_level: float = 0.05):  # Simulate noise in point cloud
-    return arr + noise_level * np.random.randn(*arr.shape)
-
-
-def status_report(status: int) -> None:
-    if status != 1:
-        print('The cluster is not a sign.')
-        os.sys.exit()  # If not a sign - exit the execution
-
-
-def prep_scene(path_plate: np.array, path_cone: np.array, noise_level = 0.05) -> np.array:
-    xyz_plate = read_ply(path_plate)
-    xyz_cone = read_ply(path_cone)
-
-    xyz_plate = add_noise(xyz_plate, noise_level)
-    xyz_cone = add_noise(xyz_cone, noise_level)
-
-    points_plate = organize_points(xyz_plate, 115, 5)
-    points_cone = organize_points(xyz_cone, 25, 5)
-
-    points_scene = np.concatenate((points_plate, points_cone), 0)
-    points_scene = np.random.permutation(points_scene)
-
-    return points_scene
-
-
 class SceneViewer:
     def __init__(self, scene_points: np.array) -> None:
+        # Scene class. Contains information of point cloud location and coordinate range.
 
         self.coord_system = ('x', 'y', 'z')
         self.scene_center = None
         self.scene_boundries = None
 
-        self.scene_boundries = self._calc_limits(scene_points)
         self._set_scene(scene_points)
 
     def _calc_limits(self, points: np.array) -> dict:
+        # Scene limit calculation by point coordinates
+
         limits = {}
 
         for ax_idx, ax in enumerate(self.coord_system):
@@ -93,6 +41,7 @@ class SceneViewer:
         return limits
 
     def _set_scene(self, scene_points: np.array) -> None:
+        # Scene initialization
 
         self.scene_center = {k: c for (k, c) in zip(self.coord_system, scene_points[:, :-1].mean(0))}
         self.scene_boundries = self._calc_limits(scene_points)
@@ -104,8 +53,9 @@ class SceneViewer:
                                         self.scene_center[ax] + max_diff)
 
     def show_cluster(self, points: np.array, scale2scene: bool = False, title: str = 'Title') -> None:
+        # Show cluster in 3D and 2D projections. If scale2scene is True scene is scale according to initial point cluster
 
-        if scale2scene:  # Scaling all the axis according to maximal diffrence
+        if scale2scene:  # Scaling all the axis according to maximal difference
             limits = self.scene_boundries
         else:
             limits = self._calc_limits(points)
@@ -155,6 +105,64 @@ class SceneViewer:
 
         fig.tight_layout()
         plt.show()
+
+
+def read_ply(path: Path) -> np.array:
+    data = pd.read_csv(path, header=None).values  # Read *.ply file as text
+    n_points = int(str(data[3]).split(' ')[-1][:-2])  # Extract number of vertices (points) from scene (cloud)
+
+    points = data[10:10 + n_points]
+    # points is a numpy array of objects - strings with the format "[x y z]"
+    points = np.array([np.array(str(p)[2:-2].split(' '), dtype=float) for p in points])
+    return points
+
+
+def read_csv(path: Path) -> np.array:
+    points = pd.read_csv(path, header=None).values  # Read *.csv file
+    return points
+
+
+def organize_points(xyz: np.array, mean: float, sig: float) -> np.array:
+    # Simulate data by merging xyz coordinates with generated reflectivity by normal distribution
+
+    n_coords = len(xyz)
+    r = np.random.normal(mean, sig, size=(n_coords,))
+
+    points = np.zeros((n_coords, 4))
+
+    points[:, :3] = xyz
+    points[:, -1] = r
+
+    return points
+
+
+def add_noise(arr: np.array, noise_level: float = 0.05):  # Simulate noise in point cloud
+    return arr + noise_level * np.random.randn(*arr.shape)
+
+
+def status_report(status: int) -> None:
+    if status != 1:
+        print('The cluster is not a sign.')
+        os.sys.exit()  # If not a sign - exit the execution
+
+
+def prep_scene(path_plate: Path, path_cone: Path, noise_level=0.05) -> np.array:
+    # Preparation points for algorithm by merging plate cloud and pole cloud
+
+    xyz_plate = read_ply(path_plate)
+    xyz_cone = read_ply(path_cone)
+
+    xyz_plate = add_noise(xyz_plate, noise_level)
+    xyz_cone = add_noise(xyz_cone, noise_level)
+
+    points_plate = organize_points(xyz_plate, 115, 5)
+    points_cone = organize_points(xyz_cone, 25, 5)
+
+    points_scene = np.concatenate((points_plate, points_cone), 0)
+    points_scene = np.random.permutation(points_scene)
+
+    return points_scene
+
 
 
 def plot_hitogram(points: np.array, n_bins: int):

@@ -10,7 +10,7 @@ import numpy as np
 import numpy.linalg as la
 
 
-# https://github.com/falcondai/py-ransac/blob/master/ransac.py
+
 def project_3d(coords, plane_point, unit_normal):
 
     points_from_point_in_plane = coords - plane_point

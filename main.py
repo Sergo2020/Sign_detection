@@ -61,9 +61,6 @@ def detect_sign(points: np.array, visualize: bool = False, min_ratio: float = 0.
     if visualize:
         io.show_image(img, title='Points bounded by sign estimated plate shape')
 
-
-# TODO: Fix code and check for usability
-
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
 
