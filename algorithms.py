@@ -17,6 +17,7 @@ import lin_alg
 class BiModal:
     def __init__(self, bw: float = 2.5) -> None:
         # Bi Model density estimation detection by KDE
+        # bw: float, bandwidth of a KDE
 
         self._kde = KernelDensity(kernel='gaussian', bandwidth=bw)  # Initialization of KDE alg.
 
@@ -25,7 +26,8 @@ class BiModal:
         self.r_threshold = None
 
     def fit_kde(self, data: np.array) -> None:
-        # KDE fit by reflectivity (data expected to have shape of (N,) or (N,1))
+        # KDE fit by reflectivity
+        # data: np.array with shape of (N,) or (N,1))
 
         self._kde.fit(data.reshape(-1, 1))
 
@@ -125,7 +127,7 @@ class Plate:
         self.inliers[:, -1] = 100
         self.outliers[:, -1] = 0
 
-        print(f' Inliers {len(self.inliers)}/{len(points)}')
+        print(f'Inliers {len(self.inliers)}/{len(points)}')
 
         return 1
 
