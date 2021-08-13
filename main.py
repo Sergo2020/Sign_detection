@@ -56,7 +56,7 @@ def detect_sign(points: np.array, visualize: bool = False, min_ratio: float = 0.
     if visualize:
         io.show_image(img, title='Points in pixel space')  # Preview the image
 
-    img = plate_plane.detect_shapes(img)  # Check what shape suits the most to plate
+    img = plate_plane.detect_shapes(img, visualize)  # Check what shape suits the most to plate
 
     if visualize:
         io.show_image(img, title='Points bounded by sign estimated plate shape')
@@ -75,8 +75,8 @@ if __name__ == '__main__':
 
     # Simulated data with Blender software
     #
-    # pole_path = Path(r"Objects\rot_z\pole.ply")
-    # plate_path = Path(r"Objects\rot_z\square.ply")
+    # pole_path = Path(r"Objects\rot_x\pole.ply")
+    # plate_path = Path(r"Objects\rot_x\circle.ply")
     #
-    # sim_points = io.prep_scene(plate_path, pole_path)
-    # detect_sign(sim_points, False, 0.6)
+    # sim_points = io.prep_scene(plate_path, pole_path, noise_level=0.02)
+    # detect_sign(sim_points, True, 0.6)

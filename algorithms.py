@@ -16,7 +16,7 @@ import lin_alg
 
 class BiModal:
     def __init__(self, bw: float = 2.5) -> None:
-        # Bi Model density detection by KDE
+        # Bi Model density estimation detection by KDE
 
         self._kde = KernelDensity(kernel='gaussian', bandwidth=bw)  # Initialization of KDE alg.
 
@@ -231,6 +231,6 @@ def fit_plane_ransac(points: np.array, criteria_n: int,
     points = points[sorted_idx]
 
     inlier_list = np.where(dists < thresh)[0]
-
     outlier_list = np.where(dists >= thresh)[0]
+
     return plane, points[inlier_list], points[outlier_list]
