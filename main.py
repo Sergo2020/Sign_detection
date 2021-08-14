@@ -18,6 +18,15 @@ import io_utils as io
 
 
 def detect_sign(points: np.array, visualize: bool = False, min_ratio: float = 0.75) -> None:
+    """
+    Sign detection method. The result will be printed out.
+
+    :param points: point cluster (N,4) where each points is (x,y,z,R)
+    :param visualize: If True every step will be plotted
+    :param min_ratio: ratio of minimum inliers for plane coefficients estimation. Default is 0.75.
+    :return: None. If needed, the it may be changed to return plane_plate object, as
+             it contains plane orientation and shape.
+    """
     scene = io.SceneViewer(points)  # Initialization of scene view
     sign_detector = alg.BiModal()  # Initialization of bi modal detector
 
