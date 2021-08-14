@@ -13,10 +13,10 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
-plt.rc('xtick', labelsize=14)
-plt.rc('ytick', labelsize=14)
-plt.rc('legend', fontsize=14)
-plt.rc('axes', labelsize=14)
+plt.rc('xtick', labelsize=20)
+plt.rc('ytick', labelsize=20)
+plt.rc('legend', fontsize=20)
+plt.rc('axes', labelsize=20)
 
 plot_size = 3
 
@@ -64,7 +64,7 @@ class SceneViewer:
 
         fig = plt.figure(figsize=(4 * plot_size, 4 * plot_size))
         fig.suptitle(title, fontsize=16)
-        ax_3d = fig.add_subplot(2, 2, 1, projection='3d')  # 3D, xy, yz, xz
+        ax_3d = fig.add_subplot(2, 2, 2, projection='3d')  # 3D, xy, yz, xz
         ax_3d.title.set_text('3D Scene')
         ax_3d.set_xlim3d(*limits['x'])
         ax_3d.set_ylim3d(*limits['y'])
@@ -73,8 +73,11 @@ class SceneViewer:
         ax_3d.set_ylabel('y')
         ax_3d.set_zlabel('z')
         ax_3d.scatter3D(points[:, 0], points[:, 1], points[:, 2], c=points[:, 3])
+        ax_3d.xaxis.set_ticks([])
+        ax_3d.yaxis.set_ticks([])
+        ax_3d.zaxis.set_ticks([])
 
-        ax_xy = fig.add_subplot(2, 2, 2)
+        ax_xy = fig.add_subplot(2, 2, 1)
         ax_xy.title.set_text('X-Y Projection')
         ax_xy.scatter(points[:, 0], points[:, 1], c=points[:, 3])
         ax_xy.set_xlabel('x')

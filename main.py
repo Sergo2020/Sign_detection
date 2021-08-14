@@ -61,7 +61,10 @@ def detect_sign(points: np.array, visualize: bool = False, min_ratio: float = 0.
     if visualize:
         io.show_image(img, title='Points bounded by sign estimated plate shape')
 
+
 if __name__ == '__main__':
+    # Provided data
+
     parser = argparse.ArgumentParser()
 
     parser.add_argument("-c", "--cluster_path", default=Path(r"Objects\cluster_2.csv"), required=False)
@@ -74,9 +77,9 @@ if __name__ == '__main__':
     detect_sign(cluster_points, args.visual, args.min_ratio)
 
     # Simulated data with Blender software
+
+    # pole_path = Path(r"Objects\straight\pole.ply")
+    # plate_path = Path(r"Objects\straight\triangle.ply")
     #
-    # pole_path = Path(r"Objects\rot_x\pole.ply")
-    # plate_path = Path(r"Objects\rot_x\circle.ply")
-    #
-    # sim_points = io.prep_scene(plate_path, pole_path, noise_level=0.02)
+    # sim_points = io.prep_scene(plate_path, pole_path, noise_level=0.01)
     # detect_sign(sim_points, True, 0.6)
