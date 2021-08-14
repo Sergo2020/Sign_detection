@@ -25,7 +25,7 @@
 ### Instructions:
 
    1. Set python > 3.8 environment according to requirements.txt
-   2. To test on provided data run main.py either from terminal or IDE
+   2. To test algorithm on the provided data run main.py either from terminal or IDE with default settings.
    3. To run tests on provided and simulated data there is also a Jupyter notebook.
       1. It is already pre runned, therefore results will show up automatically.
       2. You may additionally re-run it as specified within the notebook.
