@@ -26,8 +26,7 @@ class BiModal:
         self.r_threshold = None
 
     def fit_kde(self, data: np.array) -> None:
-        # KDE fit by reflectivity
-        # data: np.array with shape of (N,) or (N,1))
+        # KDE fit by reflectivity. Input is reflectivity vector.
 
         self._kde.fit(data.reshape(-1, 1))
 
@@ -43,9 +42,9 @@ class BiModal:
         return density, dens_x
 
     def detect_modes(self, data: np.array, density_arr: np.array, min_dist: int = 0.25) -> int:
-        # Number of modes detection by simulated density function
+        # Number of modes detection and threshold by simulated density function
 
-        distance = min_dist * (data.max() - data.min())  # Minimum distance is min_dist*range from overall range
+        distance = min_dist * (data.max() - data.min())  # Minimum distance is min_dist*(max - min) from overall range
         peaks_idx = find_peaks(density_arr, distance=distance)[0]
 
         print(f'{len(peaks_idx)} modes are found.')
@@ -53,9 +52,6 @@ class BiModal:
         if len(peaks_idx) != 2:
             print('Amount of modes does not match 2 - this is not a sign.')
             return 0
-
-        # find_peaks scans from the lowest values to higher,
-        # thus first peak value is pole related as it has lower R
 
         self.pole_val, self.plane_val = data[peaks_idx[0]], data[peaks_idx[1]]
 
@@ -96,9 +92,14 @@ class Plate:
                            thresh_min: float = 0.02,
                            thresh_max: float = 0.08) -> int:
         # Plate plane coefficient estimation by RANSAC
+        # There is a loop over loss (error) values, as it was not clear what is expected loss range.
 
-        fit_points = points.copy()
-        fit_points[:, -1] = 1.0
+        if points.shape[1] == 4:  # Translation of coordinates to homogeneous form
+            fit_points = points.copy()
+            fit_points[:, -1] = 1.0
+        else:
+            fit_points = np.ones((len(points), 4))
+            fit_points[:, :3] = points
 
         min_n = int(self.min_pers * points.shape[0])
 
@@ -161,8 +162,9 @@ class Plate:
 
     def detect_shapes(self, img: np.array, draw: bool = False) -> str:
         # Shape detection from points in pixel space.
+        # Method relies on OpenCV algorithms for minimum area shape detection.
 
-        indicies = np.where(img[:, :, 0] > 0) # Points save as image, array with shape (H,W,3)
+        indicies = np.where(img[:, :, 0] > 0)  # Points save as image, array with shape (H,W,3)
 
         points = np.array([(y, x) for y, x in zip(*indicies)])
 
@@ -182,7 +184,7 @@ class Plate:
 
         if draw:
             # OpenCV has some issues with coordinates and data types.
-            # Therefore, besides drawing, coordinates have to be fixed per each function.
+            # Therefore, besides drawing, coordinates have to be fixed per function.
             if self.shape == 'Rectangle':
                 rect_points = np.array([(x, y) for y, x in np.round(rect_points).astype(int)])
                 cv.drawContours(img, [rect_points], 0, (0, 0, 255), 1)

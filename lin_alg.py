@@ -57,7 +57,7 @@ def coord2d_pix(points_2d: np.array, h: int = 64, w: int = 64) -> np.array:
 
 
 def points_svd(points: np.array) -> (np.array, np.array, np.array):
-    # SVD decomposition of points (N,3)
+    # SVD decomposition of points with shape (N,3)
 
     if len(points.shape) > 3:
         points = points[:, :3]
