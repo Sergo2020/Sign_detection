@@ -75,11 +75,14 @@ def detect_sign(points: np.array, visualize: bool = False, min_ratio: float = 0.
 if __name__ == '__main__':
     # Provided data
 
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(description='Sign detector.')
 
-    parser.add_argument("-c", "--cluster_path", default=Path(r"Objects\cluster_2.csv"), required=False)
-    parser.add_argument("-p", "--min_ratio", default=0.75, required=False)
-    parser.add_argument("-v", "--visual", default=False, required=False)
+    parser.add_argument("-c", "--cluster_path", default=Path(r"Objects\cluster_2.csv"),
+                        help='Path to the *.csv cluster file.', required=False)
+    parser.add_argument("-r", "--min_ratio", default=0.75,
+                        help='Minimum ration of inliers for plane estimation.', required=False)
+    parser.add_argument("-v", "--visual", default=False,
+                        help='If True results of each step will be displayed.', required=False)
 
     args = parser.parse_args()
 
