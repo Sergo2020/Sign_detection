@@ -25,7 +25,7 @@
 ### Instructions:
 
    1. Extract files
-   2. Set python > 3.8 environment with modules from requirements.txt
+   2. Set python > 3.8 environment according to requirements.txt
    3. To test on provided data run main.py either from terminal or IDE
    4. To run test on provided and simulated data there is also Jupiter notebook.
       1. It is already pre runned, therefore results will show up automatically.
