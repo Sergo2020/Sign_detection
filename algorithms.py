@@ -147,11 +147,11 @@ class Plate:
         return points
 
     def rotate_plane(self, projected_points: np.array,
-                     expected_norm: np.array = np.array([0, 0, 1])) -> (np.array, np.array):
-        # Rotation matrix estimation ,rotation of points to align with pre defined (expected_norm)
-        # plane for further translation to pixel space
+                     expected_normal: np.array = np.array([0, 0, 1])) -> (np.array, np.array):
+        # Rotation matrix estimation from two normals: plane_normal and expected_norm.
+        # Then plane rotation is preformed by found matrix.
 
-        matrix = lin_alg.rotation_matrix_from_vectors(self.plane_normal, expected_norm)
+        matrix = lin_alg.rotation_matrix_from_vectors(self.plane_normal, expected_normal)
 
         projected_points[:, :3] = projected_points[:, :3] @ matrix
 
@@ -160,9 +160,9 @@ class Plate:
         return projected_points, pixel_points
 
     def detect_shapes(self, img: np.array, draw: bool = False) -> str:
-        # Detect shapes from points in pixel space
+        # Shape detection from points in pixel space.
 
-        indicies = np.where(img[:, :, 0] > 0)
+        indicies = np.where(img[:, :, 0] > 0) # Points save as image, array with shape (H,W,3)
 
         points = np.array([(y, x) for y, x in zip(*indicies)])
 
@@ -181,7 +181,8 @@ class Plate:
         print(f'The {self.shape} shaped sign is detected.')
 
         if draw:
-
+            # OpenCV has some issues with coordinates and data types.
+            # Therefore, besides drawing, coordinates have to be fixed per each function.
             if self.shape == 'Rectangle':
                 rect_points = np.array([(x, y) for y, x in np.round(rect_points).astype(int)])
                 cv.drawContours(img, [rect_points], 0, (0, 0, 255), 1)

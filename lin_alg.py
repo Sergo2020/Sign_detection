@@ -9,8 +9,8 @@ import numpy as np
 import numpy.linalg as la
 
 
-def project_3d(coords, plane_point, unit_normal):
-    # Project points to plane in 3D space, that is defined by unit vector
+def project_3d(coords: np.array, plane_point: np.array, unit_normal: np.array) -> np.array:
+    # Project points to plane in 3D space, that is defined by unit vector.
 
     points_from_point_in_plane = coords - plane_point
     proj_onto_normal_vector = np.dot(points_from_point_in_plane,
@@ -23,7 +23,7 @@ def project_3d(coords, plane_point, unit_normal):
     return coords
 
 
-def rotation_matrix_from_vectors(vec1, vec2):
+def rotation_matrix_from_vectors(vec1: np.array, vec2: np.array) -> np.array:
     # Estimation of rotation matrix from vec1 to vec2
 
     a, b = (vec1 / np.linalg.norm(vec1)).reshape(3), (vec2 / np.linalg.norm(vec2)).reshape(3)
@@ -35,7 +35,7 @@ def rotation_matrix_from_vectors(vec1, vec2):
     return rotation_matrix
 
 
-def coord2d_pix(points_2d, h=64, w=64):
+def coord2d_pix(points_2d: np.array, h: int = 64, w: int = 64) -> np.array:
     # Translation of projected coordinates to pixel space
 
     d_y = points_2d[:, 1].max() - points_2d[:, 1].min()
@@ -56,8 +56,9 @@ def coord2d_pix(points_2d, h=64, w=64):
     return grid_space
 
 
-def points_svd(points):
+def points_svd(points: np.array) -> (np.array, np.array, np.array):
     # SVD decomposition of points (N,3)
+
     if len(points.shape) > 3:
         points = points[:, :3]
 
@@ -67,7 +68,7 @@ def points_svd(points):
     return u, S, vh
 
 
-def fit_plane_lse(points):
+def fit_plane_lse(points: np.array) -> np.array:
     # Detection of null space (normal) for point set
 
     assert points.shape[0] >= 3
@@ -76,7 +77,7 @@ def fit_plane_lse(points):
     return null_space
 
 
-def get_point_dist(points, plane):
+def get_point_dist(points: np.array, plane: np.array) -> np.array:
     # Calculation of distance between points and plane
     dists = np.abs(points @ plane) / np.sqrt(plane[0] ** 2 + plane[1] ** 2 + plane[2] ** 2)
     return dists
