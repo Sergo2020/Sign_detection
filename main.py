@@ -13,7 +13,7 @@ from pathlib import Path
 
 import numpy as np
 
-import algorithms as alg
+import detectors as alg
 import io_utils as io
 
 
