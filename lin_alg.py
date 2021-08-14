@@ -1,5 +1,5 @@
 '''
-Support linear algebra function:
+Support linear algebra methods:
     Coordinates translation
     Solutions for system of equations
     Projection calculation

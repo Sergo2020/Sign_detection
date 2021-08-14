@@ -1,8 +1,8 @@
 '''
-Algorithmic functions and classes:
+Algorithmic methods and classes:
     Bi model class - detection of bi modal density, based on KDE
     Plate class - detection of plate orientation in 3D space and 2D shape
-    RANSAC function
+    RANSAC method
 
 '''
 
@@ -61,7 +61,7 @@ class BiModal:
         return 1
 
     def separate_by_thresh(self, data: np.array) -> (np.array, np.array):
-        # Separate reflectivity by detected threshold
+        # Separate reflectivity by detected threshold.
 
         plate_idx = (data[:, -1] > self.r_threshold)
         plate_idx = plate_idx
@@ -72,13 +72,13 @@ class BiModal:
 class Plate:
     def __init__(self, min_pers: float = 0.75, pix_h: int = 64, pix_w: int = 64):
         # Sign plate class. Contains plate orientation parameters, methods for orientation detection and
-        # shape related methods
+        # shape related methods.
 
         self.coefs = {'A': 0.0, 'B': 0.0, 'C': 0.0, 'D': 0.0}
         self.areas = {'Triangle': 0, 'Circle': 0, 'Rectangle': 0}
         self.shape = None
 
-        self.plane_normal = np.zeros((3,))
+        self.normal = np.zeros((3,))
         self.inliers = None
         self.outliers = None
 
@@ -120,7 +120,7 @@ class Plate:
 
         self.coefs = {'A': plane[0], 'B': plane[1], 'C': plane[2], 'D': plane[3]}
 
-        self.plane_normal = np.array([self.coefs['A'], self.coefs['B'], self.coefs['C']])
+        self.normal = np.array([self.coefs['A'], self.coefs['B'], self.coefs['C']])
 
         self.inliers = inliers
         self.outliers = outliers
@@ -140,7 +140,7 @@ class Plate:
         else:
             coords = points
 
-        unit_normal = self.plane_normal / np.linalg.norm(self.plane_normal)
+        unit_normal = self.normal / np.linalg.norm(self.normal)
         plane_point = self.inliers[0, :3].reshape(1, 3)
 
         points[:, :3] = lin_alg.project_3d(coords, plane_point, unit_normal)
@@ -152,7 +152,7 @@ class Plate:
         # Rotation matrix estimation from two normals: plane_normal and expected_norm.
         # Then plane rotation is preformed by found matrix.
 
-        matrix = lin_alg.rotation_matrix_from_vectors(self.plane_normal, expected_normal)
+        matrix = lin_alg.rotation_matrix_from_vectors(self.normal, expected_normal)
 
         projected_points[:, :3] = projected_points[:, :3] @ matrix
 

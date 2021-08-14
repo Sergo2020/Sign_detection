@@ -1,5 +1,5 @@
 '''
-Input/Output functions:
+Input/Output methods:
     Read data from files (*.ply, *.csv)
     Data pre processing (for sim clusters)
     Data visualization
@@ -113,16 +113,18 @@ class SceneViewer:
 
 
 def read_ply(path: Path) -> np.array:
-    data = pd.read_csv(path, header=None).values  # Read *.ply file as text
-    n_points = int(str(data[3]).split(' ')[-1][:-2])  # Extract number of vertices (points) from scene (cloud)
+    # Extraction of points from *.ply file as np.array
 
+    data = pd.read_csv(path, header=None).values
+    n_points = int(str(data[3]).split(' ')[-1][:-2])
     points = data[10:10 + n_points]
-    # points is a numpy array of objects - strings with the format "[x y z]"
     points = np.array([np.array(str(p)[2:-2].split(' '), dtype=float) for p in points])
     return points
 
 
 def read_csv(path: Path) -> np.array:
+    # Extraction of points from *csv file as np.array
+
     points = pd.read_csv(path, header=None).values  # Read *.csv file
     return points
 
@@ -141,18 +143,27 @@ def organize_points(xyz: np.array, mean: float, sig: float) -> np.array:
     return points
 
 
-def add_noise(arr: np.array, noise_level: float = 0.05):  # Simulate noise in point cloud
+def add_noise(arr: np.array, noise_level: float = 0.05):
+    # Simulate noise in point cloud
     return arr + noise_level * np.random.randn(*arr.shape)
 
 
 def status_report(status: int) -> None:
+    # Break points for algorithm. Exits execution if status is 0
     if status != 1:
         print('The cluster is not a sign.')
         os.sys.exit()  # If not a sign - exit the execution
 
 
-def prep_scene(path_plate: Path, path_cone: Path, noise_level=0.05) -> np.array:
+def prep_scene(path_plate: Path, path_cone: Path,
+               noise_level: float = 0.05,
+               plate_r_mean: float = 115.0,
+               plate_r_std: float = 5.0,
+               pole_r_mean: float = 25.0,
+               pole_r_std: float = 5.0) -> np.array:
     # Preparation points for algorithm by merging plate cloud and pole cloud
+    # Reflectivity for each is sampled from separate normal distributions.
+    # Noise is added to coordinates.
 
     xyz_plate = read_ply(path_plate)
     xyz_cone = read_ply(path_cone)
@@ -160,8 +171,8 @@ def prep_scene(path_plate: Path, path_cone: Path, noise_level=0.05) -> np.array:
     xyz_plate = add_noise(xyz_plate, noise_level)
     xyz_cone = add_noise(xyz_cone, noise_level)
 
-    points_plate = organize_points(xyz_plate, 115, 5)
-    points_cone = organize_points(xyz_cone, 25, 5)
+    points_plate = organize_points(xyz_plate, plate_r_mean, plate_r_std)
+    points_cone = organize_points(xyz_cone, pole_r_mean, pole_r_std)
 
     points_scene = np.concatenate((points_plate, points_cone), 0)
     points_scene = np.random.permutation(points_scene)
@@ -170,6 +181,7 @@ def prep_scene(path_plate: Path, path_cone: Path, noise_level=0.05) -> np.array:
 
 
 def plot_hitogram(points: np.array, n_bins: int):
+    # Histogram plot method
     y_labels = ['x values', 'y values', 'z values', 'R values']
 
     def plot_subhist(ax, data, bins, y_label):
