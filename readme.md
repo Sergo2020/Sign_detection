@@ -9,7 +9,7 @@
 
  - Python files:
     - main.py
-    - algorithms.py
+    - detectors.py
     - io_utils.py
     - lin_alg.py
  - Jupiter notebook innoviz_solution.ipynb
