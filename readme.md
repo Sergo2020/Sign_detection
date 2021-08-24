@@ -1,7 +1,7 @@
-# Innoviz assigment:
+# Sign detection from point cloud
 
     Sign detection and classification by point cloud.
-    Algorithm is tested on simuatied data.
+    Algorithm is tested on simuatied data, where plate is highly reflective.
 
 ### Provided materials:
 
