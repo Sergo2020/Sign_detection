@@ -1,9 +1,7 @@
 # Innoviz assigment:
 
     Sign detection and classification by point cloud.
-    Algorithm is tested on provided data and simuations.
-
-    By Sergey Sinitsa
+    Algorithm is tested on simuatied data.
 
 ### Provided materials:
 
@@ -12,10 +10,8 @@
     - detectors.py
     - io_utils.py
     - lin_alg.py
- - Jupiter notebook innoviz_solution.ipynb
- - Solution overview innoviz_solution_overview.pdf
+ - Jupiter notebook solution.ipynb
  - Data files in "Objects" directory:
-   - Provided cluster cluster_2.csv
    - Simulated data:
       - Directory rot_x
       - Directory rot_z
