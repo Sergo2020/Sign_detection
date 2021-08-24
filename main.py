@@ -77,22 +77,24 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description='Sign detector.')
 
-    parser.add_argument("-c", "--cluster_path", default=Path(r"Objects\cluster_2.csv"),
+    parser.add_argument("-b", "--pole_path", default=Path(r"Objects\straight\pole.ply"),
                         help='Path to the *.csv cluster file.', required=False)
-    parser.add_argument("-r", "--min_ratio", default=0.75,
+    parser.add_argument("-t", "--plate_path", default=Path(r"Objects\straight\triangle.ply"),
+                        help='Path to the *.csv cluster file.', required=False)
+    parser.add_argument("-r", "--min_ratio", default=0.6,
                         help='Minimum ration of inliers for plane estimation.', required=False)
     parser.add_argument("-v", "--visual", default=False,
                         help='If True results of each step will be displayed.', required=False)
+    parser.add_argument("-n", "--noise", default=False,
+                        help='Noise level for simulated data.', required=False)
 
     args = parser.parse_args()
 
     cluster_points = io.read_csv(args.cluster_path)
     detect_sign(cluster_points, args.visual, args.min_ratio)
 
-    # Simulated data with Blender software
+    pole_path = Path(r"Objects\straight\pole.ply")
+    plate_path = Path(r"Objects\straight\triangle.ply")
 
-    # pole_path = Path(r"Objects\straight\pole.ply")
-    # plate_path = Path(r"Objects\straight\triangle.ply")
-    #
-    # sim_points = io.prep_scene(plate_path, pole_path, noise_level=0.01)
-    # detect_sign(sim_points, True, 0.6)
+    sim_points = io.prep_scene(args.pole_path, args.plate_path, noise_level=args.noise)
+    detect_sign(sim_points, True, args.min_ratio)
