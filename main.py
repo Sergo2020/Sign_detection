@@ -73,7 +73,6 @@ def detect_sign(points: np.array, visualize: bool = False, min_ratio: float = 0.
 
 
 if __name__ == '__main__':
-    # Provided data
 
     parser = argparse.ArgumentParser(description='Sign detector.')
 
@@ -90,11 +89,11 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    cluster_points = io.read_csv(args.cluster_path)
-    detect_sign(cluster_points, args.visual, args.min_ratio)
+    # cluster_points = io.read_csv(args.cluster_path)
+    # detect_sign(cluster_points, args.visual, args.min_ratio)
 
-    pole_path = Path(r"Objects\straight\pole.ply")
-    plate_path = Path(r"Objects\straight\triangle.ply")
+    # pole_path = Path(r"Objects\straight\pole.ply")
+    # plate_path = Path(r"Objects\straight\triangle.ply")
 
     sim_points = io.prep_scene(args.pole_path, args.plate_path, noise_level=args.noise)
     detect_sign(sim_points, True, args.min_ratio)
